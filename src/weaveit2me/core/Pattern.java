@@ -29,9 +29,5 @@ public class Pattern {
 	public void deleteAtIndex(int i) {
 		sequence.remove(i);
 	}
-	
-	public static Pattern loadWIF(String fileName) {
-		return null;
-	}
 
 }
