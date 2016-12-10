@@ -1,67 +1,37 @@
 package weaveit2me.core;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a weaving pattern as a named collection of (potentially) repeatable 
- * sub-patterns, each of which specifies an ordered sequence of shaft lifts.  
- * 
- * Accomodates up to 32 shafts.  
- * 
- * @author kentcollins
+ * An ordered sequence of treadles.
  *
  */
-
 public class Pattern {
 
-	private String name;
-	private int numShafts;
-	private List<Repeat> repeats;
-	//TODO Shaft patterns are no good without a threading plan
-	private String threadingPlan;
+	private List<Treadle> sequence;
+	private int currIndex;
 
-	public Pattern(String name, int numShafts) {
-		super();
-		this.name = name;
-		this.numShafts = numShafts;
-		repeats = new ArrayList<Repeat>();
+	public Pattern() {
+		this(new ArrayList<Treadle>());
+	}
+
+	public Pattern(List<Treadle> seq) {
+		this.sequence = seq;
+		currIndex = 0;
+	}
+
+	public void addTreadle(Treadle t) {
+		if (t != null)
+			sequence.add(t);
+	}
+
+	public void deleteAtIndex(int i) {
+		sequence.remove(i);
 	}
 	
-	public String getName() {
-		return name;
+	public static Pattern loadWIF(String fileName) {
+		return null;
 	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public int getNumShafts() {
-		return numShafts;
-	}
-
-	public void setNumShafts(int numShafts) {
-		this.numShafts = numShafts;
-	}
-
-	public List<Repeat> getRepeats() {
-		return repeats;
-	}
-
-	public void setRepeats(List<Repeat> repeats) {
-		this.repeats = repeats;
-	}
-	
-	public void addRepeat(Repeat r) {
-		repeats.add(r);
-	}
-	
-	public void addRepeat(int position, Repeat r) {
-		repeats.add(position, r);
-	}
-	
-	public void clear(){
-		repeats = new ArrayList<Repeat>();
-	}
-	
 
 }

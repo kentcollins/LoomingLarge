@@ -10,16 +10,16 @@ package weaveit2me.looms;
  */
 public interface LoomController {
 
-	public void setShafts(int bitPattern);
+	void setShafts(int bitPattern);
 
-	public void openShed();
+	void openShed();
 
-	public void closeShed();
+	void closeShed();
 
-	public void weave();
+	void weave();
 
-	public void beat();
+	void beat();
 
-	public void wind();
+	void wind();
 
 }

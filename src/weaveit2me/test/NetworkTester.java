@@ -7,9 +7,6 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-import weaveit2me.core.Pattern;
-import weaveit2me.core.PatternPlayback;
-
 /**
  * Tests the ability to connect with a loom socket over TCP and execute commands
  * from the test pattern. Prior to running this class, a loom controller should
@@ -42,7 +39,7 @@ public class NetworkTester {
 						new InputStreamReader(System.in))) {
 			String userInput;
 			System.out.println(in.readLine());
-			testBatch(out, in);
+			//testBatch(out, in);
 			while ((userInput = stdIn.readLine()) != null) {
 				out.println(userInput);
 				out.println("echo: " + in.readLine());
@@ -57,58 +54,57 @@ public class NetworkTester {
 
 	}
 
-	private static void testBatch(PrintWriter out, BufferedReader in)
-			throws InterruptedException, IOException {
-		Pattern p = TestPattern.generateTestPattern();
-		PatternPlayback pp = new PatternPlayback();
-		pp.loadPattern(p);
-		System.out.println("Current pattern is: "
-				+ pp.getCurrentPattern().getName());
-		System.out.println("Current repeat is: "
-				+ pp.getCurrentRepeat().getName());
-		System.out.println("Current lift sequence is: " + pp.getCurrentLift());
-		for (int i = 0; i < 10; i++) {
-			out.println("SET_SHAFTS " + pp.advance());
-			System.out.println(in.readLine());
-		}
-		for (int i = 0; i < 10; i++) {
-			out.println("SET_SHAFTS " + pp.reverse());
-			System.out.println(in.readLine());
-		}
-		pp.nextRepeat();
-		System.out.println("Current repeat is: "
-				+ pp.getCurrentRepeat().getName());
-		for (int i = 0; i < 10; i++) {
-			out.println("SET_SHAFTS " + pp.advance());
-			System.out.println(in.readLine());
-		}
-		for (int i = 0; i < 10; i++) {
-			out.println("SET_SHAFTS " + pp.reverse());
-			System.out.println(in.readLine());
-		}
-		pp.nextRepeat();
-		System.out.println("Current repeat is: "
-				+ pp.getCurrentRepeat().getName());
-		for (int i = 0; i < 10; i++) {
-			out.println("SET_SHAFTS " + pp.advance());
-			System.out.println(in.readLine());
-			Thread.sleep(100);
-		}
-		for (int i = 0; i < 10; i++) {
-			out.println("SET_SHAFTS " + pp.reverse());
-			System.out.println(in.readLine());
-		}
-		pp.nextRepeat();
-		System.out.println("Current repeat is: "
-				+ pp.getCurrentRepeat().getName());
-		for (int i = 0; i < 10; i++) {
-			out.println("SET_SHAFTS " + pp.advance());
-			System.out.println(in.readLine());
-		}
-		for (int i = 0; i < 10; i++) {
-			out.println("SET_SHAFTS " + pp.reverse());
-			System.out.println(in.readLine());
-		}
-	}
+//	private static void testBatch(PrintWriter out, BufferedReader in)
+//			throws InterruptedException, IOException {
+//		Pattern p = new Pattern();
+//		p.addTreadle(new Treadle());
+//		System.out.println("Current pattern is: "
+//				+ pp.getCurrentPattern().getName());
+//		System.out.println("Current repeat is: "
+//				+ pp.getCurrentRepeat().getName());
+//		System.out.println("Current lift sequence is: " + pp.getCurrentLift());
+//		for (int i = 0; i < 10; i++) {
+//			out.println("SET_SHAFTS " + pp.advance());
+//			System.out.println(in.readLine());
+//		}
+//		for (int i = 0; i < 10; i++) {
+//			out.println("SET_SHAFTS " + pp.reverse());
+//			System.out.println(in.readLine());
+//		}
+//		pp.nextRepeat();
+//		System.out.println("Current repeat is: "
+//				+ pp.getCurrentRepeat().getName());
+//		for (int i = 0; i < 10; i++) {
+//			out.println("SET_SHAFTS " + pp.advance());
+//			System.out.println(in.readLine());
+//		}
+//		for (int i = 0; i < 10; i++) {
+//			out.println("SET_SHAFTS " + pp.reverse());
+//			System.out.println(in.readLine());
+//		}
+//		pp.nextRepeat();
+//		System.out.println("Current repeat is: "
+//				+ pp.getCurrentRepeat().getName());
+//		for (int i = 0; i < 10; i++) {
+//			out.println("SET_SHAFTS " + pp.advance());
+//			System.out.println(in.readLine());
+//			Thread.sleep(100);
+//		}
+//		for (int i = 0; i < 10; i++) {
+//			out.println("SET_SHAFTS " + pp.reverse());
+//			System.out.println(in.readLine());
+//		}
+//		pp.nextRepeat();
+//		System.out.println("Current repeat is: "
+//				+ pp.getCurrentRepeat().getName());
+//		for (int i = 0; i < 10; i++) {
+//			out.println("SET_SHAFTS " + pp.advance());
+//			System.out.println(in.readLine());
+//		}
+//		for (int i = 0; i < 10; i++) {
+//			out.println("SET_SHAFTS " + pp.reverse());
+//			System.out.println(in.readLine());
+//		}
+//	}
 
 }
