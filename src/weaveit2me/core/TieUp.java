@@ -1,10 +1,10 @@
 package weaveit2me.core;
 
-public class Treadle {
+public class TieUp {
 	Loom loom;
 	boolean[] shafts;
 
-	public Treadle(Loom loom) {
+	public TieUp(Loom loom) {
 		this.loom = loom;
 		shafts = new boolean[loom.getNumShafts()];
 	}

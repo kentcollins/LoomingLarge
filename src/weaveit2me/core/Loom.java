@@ -3,25 +3,25 @@ package weaveit2me.core;
 public class Loom {
 
 	private int numShafts;
-	private Treadle[] treadles;
+	private TieUp[] treadles;
 
 	public Loom(int numShafts, int numTreadles) {
 		this.numShafts = numShafts;
-		treadles = new Treadle[numTreadles];
+		treadles = new TieUp[numTreadles];
 	}
 
 	public int getNumShafts() {
 		return numShafts;
 	}
 	
-	public Treadle[] getTreadles() {
+	public TieUp[] getTreadles() {
 		return treadles;
 	}
 
 	public static void main(String[] args) {
 		Loom loom = new Loom(10, 4);
 		System.out.println("Found " + loom.getNumShafts() + " shafts.");
-		Treadle t1 = new Treadle(loom);
+		TieUp t1 = new TieUp(loom);
 		t1.tieUp(7);
 		t1.tieUp(2);
 		System.out.println(t1);

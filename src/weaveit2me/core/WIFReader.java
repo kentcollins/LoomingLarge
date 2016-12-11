@@ -6,25 +6,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
-/***
- * Holds information complying with the WIF file format.
- *
- */
-
-public class WIF {
-
-	Map<String, HashMap<String, String>> info = new HashMap<String, HashMap<String, String>>();
-
-	public WIF() {
-		info = new HashMap<String, HashMap<String, String>>();
-	}
-
-	public static WIF loadFile(String fileName) {
-		WIF wif = new WIF();
+public class WIFReader {
+	public static Map<String, HashMap<String, String>> parseFile(String fileName) {
+		Map<String, HashMap<String, String>> info = new HashMap<String, HashMap<String, String>>();
 		String section = null;
 		try (Scanner scan = new Scanner(new File(fileName))) {
 			while (scan.hasNextLine()) {
 				String s = scan.nextLine().trim();
+				if (s.indexOf(";") >= 0) {
+					s = s.substring(0, s.indexOf(";"));
+				}
 				if (s.equals("")) {
 					section = null;
 					continue;
@@ -32,13 +23,14 @@ public class WIF {
 					int leftBracket = s.indexOf("[");
 					int rightBracket = s.indexOf("]");
 					section = s.substring(leftBracket + 1, rightBracket);
-					wif.info.put(section, new HashMap<String, String>());
+					section = section.toUpperCase();
+					info.put(section, new HashMap<String, String>());
 				} else { // within a section
 					int equals = s.indexOf("=");
 					if (equals > -0) { // found a new mapping
 						String subkey = s.substring(0, equals);
 						String subval = s.substring(equals + 1);
-						wif.info.get(section).put(subkey, subval);
+						info.get(section).put(subkey, subval);
 					}
 				}
 
@@ -48,8 +40,8 @@ public class WIF {
 		FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		System.out.println(wif.info);
-		return wif;
+
+		return info;
 	}
 
 	private static boolean isSection(String s) {
@@ -57,9 +49,5 @@ public class WIF {
 			return true;
 		}
 		return false;
-	}
-
-	public static void main(String[] args) {
-		WIF wif = WIF.loadFile("DDW-Multi with Dobby.wif");
 	}
 }
