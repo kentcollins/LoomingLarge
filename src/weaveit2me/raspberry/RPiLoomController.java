@@ -132,7 +132,12 @@ public class RPiLoomController implements LoomController {
 
 	@Override
 	public String getStatus() {
-		return "A-OK"+"\tCurrently holding: "+Arrays.asList(selected);
+		String response = "";
+		response+="A-OK\tCurrently holding: ";
+		for (int i: selected) {
+			response+=i+" ";
+		}
+		return response;
 	}
 
 }

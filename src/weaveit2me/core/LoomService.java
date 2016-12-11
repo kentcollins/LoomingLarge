@@ -52,7 +52,7 @@ public class LoomService implements Runnable {
 						command = LoomCommand.valueOf(commands[0]);
 						out.println("COMMAND_OK " + inputLine);
 						switch (command) {
-						case PICK_SHAFTS:
+						case PICK:
 							if (commands.length > 1) {
 								try {
 									int shafts = commands.length-1;
@@ -70,10 +70,10 @@ public class LoomService implements Runnable {
 								loom.pickShafts(new int[] {0});
 							}
 							break;
-						case OPEN_SHED:
+						case OPEN:
 							loom.openShed();
 							break;
-						case CLOSE_SHED:
+						case CLOSE:
 							loom.closeShed();
 							break;
 						case BEAT:
@@ -85,7 +85,7 @@ public class LoomService implements Runnable {
 						case WIND:
 							loom.wind();
 							break;
-						case GET_STATUS:
+						case STATUS:
 							out.println(loom.getStatus());
 							break;
 						default:
