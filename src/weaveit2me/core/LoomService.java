@@ -56,7 +56,7 @@ public class LoomService implements Runnable {
 							if (commands.length > 1) {
 								try {
 									int shafts = commands.length-1;
-									int[] picks = new int[shafts];
+									Integer[] picks = new Integer[shafts];
 									for (int i = 0; i<commands.length-1; i++) {
 										picks[i] = Integer.parseInt(commands[i+1]);
 									}
@@ -67,7 +67,7 @@ public class LoomService implements Runnable {
 									break;
 								}
 							} else {
-								loom.pickShafts(new int[] {0});
+								loom.pickShafts(new Integer[] {0});
 							}
 							break;
 						case OPEN:

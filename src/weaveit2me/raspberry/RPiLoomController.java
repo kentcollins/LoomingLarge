@@ -1,6 +1,7 @@
 package weaveit2me.raspberry;
 
-import java.util.Arrays;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
@@ -19,20 +20,23 @@ import weaveit2me.core.LoomController;
  */
 public class RPiLoomController implements LoomController {
 	
+	private static RPiLoomController currentInstance = null;
 	private static int MAX_SHAFTS; // affects shift register ops
-	private static int[] selected; // current selection
+	private static Integer[] selected; // current selection
 
 	private static final GpioController gpio = GpioFactory.getInstance();
-	private static GpioPinDigitalOutput[] shafts;
-	public static final Pin[] DEFAULTS = { RaspiPin.GPIO_00, RaspiPin.GPIO_01,
-			RaspiPin.GPIO_02, RaspiPin.GPIO_03, RaspiPin.GPIO_04,
-			RaspiPin.GPIO_05, RaspiPin.GPIO_06, RaspiPin.GPIO_07 };
-	private static RPiLoomController currentInstance = null;
+
+	private GpioPinDigitalOutput dataPin;
+	private GpioPinDigitalOutput strobePin;
 
 	/**
 	 * Singleton controller using default pin assignments.
 	 */
 	private RPiLoomController() {
+		dataPin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_00, PinState.LOW);
+		dataPin.setShutdownOptions(true, PinState.LOW);
+		strobePin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_01, PinState.LOW);
+		strobePin.setShutdownOptions(true, PinState.LOW);
 	}
 
 	/**
@@ -45,9 +49,12 @@ public class RPiLoomController implements LoomController {
 		return currentInstance;
 	}
 
+	/**
+	 * Take care of platform specific initialization.
+	 * @param shafts
+	 */
 	public void setup(int shafts) {
 		MAX_SHAFTS = shafts;
-		mapShaftsToPins(RPiLoomController.DEFAULTS);
 	}
 
 	/**
@@ -58,28 +65,51 @@ public class RPiLoomController implements LoomController {
 	 *            a space delimited sequence of integers
 	 */
 	@Override
-	public void pickShafts(int[] shafts) {
-		/*
-		 * Starting from the least significant bit, test each bit in the
-		 * provided integer to see if it holds a 1. If so, set the corresponding
-		 * GPIO pin to HIGH; otherwise, set to LOW. Reads only the number of
-		 * places for which we have shafts -- disregards remaining upper bits
-		 * (ie for an eight shaft loom, reads only the eight least significant
-		 * bits.)
-		 */
-//		for (int p = 0; p < shafts.length; p++) {
-//			boolean shouldBeEnergized = ((bitPattern >> p) & 1) == 1;
-//			if (shouldBeEnergized) {
-//				shafts[p].high();
-//			} else
-//				shafts[p].low();
-//		}
+	public void pickShafts(Integer[] shafts) {
 		selected = shafts;
 	}
 
 	@Override
 	public void openShed() {
-		// TODO Auto-generated method stub
+		SortedSet<Integer> orderedPicks = sanitizeSelection();
+		loadDataIntoShiftRegister(orderedPicks);
+		latchShafts();
+	}
+
+	private SortedSet<Integer> sanitizeSelection() {
+		// place shafts in order, remove duplicates
+		SortedSet<Integer> picks = new TreeSet<Integer>();
+		for (int i = 0; i < selected.length; i++) {
+			// disregard shafts we cannot operate
+			Integer proposed = selected[i];
+			if (proposed >0 && proposed <= MAX_SHAFTS) {
+				picks.add(proposed);
+			}
+		}
+		return picks;
+	}
+
+	private void loadDataIntoShiftRegister(SortedSet<Integer> orderedPicks) {
+		dataPin.setState(PinState.LOW);
+		strobePin.setState(PinState.LOW);
+		// pause
+		for (Integer i = 1; i<=MAX_SHAFTS; i++) {
+			if (orderedPicks.contains(i)) {
+				dataPin.setState(PinState.HIGH);
+				
+			} else {
+				dataPin.setState(PinState.LOW);
+			}
+			// pause
+			strobePin.setState(PinState.HIGH);
+			// pause
+			strobePin.setState(PinState.LOW);
+			//pause
+		}
+	}
+
+	private void latchShafts() {
+		// Apply latching power for a little while
 
 	}
 
@@ -111,31 +141,16 @@ public class RPiLoomController implements LoomController {
 		gpio.shutdown();
 	}
 
-	/**
-	 * Maps the shafts on the loom to GPIO pins.
-	 * 
-	 * @param pins
-	 *            an array of hardware pin numbers. The number of pins provided
-	 *            here determines the number of shafts that will be controlled.
-	 *            gpios[0] identifies the first shaft, gpios[1] the second, etc.
-	 * 
-	 */
-	public void mapShaftsToPins(Pin[] pins) {
-		shafts = new GpioPinDigitalOutput[pins.length];
-		for (int i = 0; i < shafts.length; i++) {
-			GpioPinDigitalOutput p = gpio.provisionDigitalOutputPin(pins[i],
-					"Shaft_" + i, PinState.LOW);
-			p.setShutdownOptions(true, PinState.LOW);
-			shafts[i] = p;
-		}
-	}
-
 	@Override
 	public String getStatus() {
 		String response = "";
-		response+="A-OK\tCurrently holding: ";
-		for (int i: selected) {
-			response+=i+" ";
+		response += "A-OK\tPicked for latching: ";
+		if (selected != null) {
+			for (int i : selected) {
+				response += i + " ";
+			}
+		} else {
+			response+="no shafts selected yet.";
 		}
 		return response;
 	}

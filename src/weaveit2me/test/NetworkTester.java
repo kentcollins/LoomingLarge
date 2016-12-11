@@ -27,8 +27,8 @@ public class NetworkTester {
 	 * @throws InterruptedException
 	 */
 	public static void main(String[] args) throws InterruptedException {
-		String ip = "192.168.0.27"; //args[0];
-		int port = 1793; //Integer.parseInt(args[1]);
+		String ip = args[0];
+		int port = Integer.parseInt(args[1]);
 
 		try (Socket client = new Socket(ip, port);
 				PrintWriter out = new PrintWriter(client.getOutputStream(),

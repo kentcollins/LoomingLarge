@@ -11,13 +11,13 @@ package weaveit2me.core;
 public interface LoomController {
 
 	/**
-	 * Pick the shafts that will next be latched
+	 * Select the shafts that will lifted next
 	 * @param selectedShafts
 	 */
-	void pickShafts(int[] selectedShafts);
+	void pickShafts(Integer[] selectedShafts);
 
 	/**
-	 * Open the shed
+	 * Open the shed, lifting the selected shafts
 	 */
 	void openShed();
 

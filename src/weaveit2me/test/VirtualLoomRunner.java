@@ -17,12 +17,6 @@ public class VirtualLoomRunner {
 		final LoomController loom = new LoomController() {
 
 			@Override
-			public void pickShafts(int[] selectedShafts) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
 			public void openShed() {
 				// TODO Auto-generated method stub
 
@@ -56,6 +50,12 @@ public class VirtualLoomRunner {
 			public String getStatus() {
 				// TODO Auto-generated method stub
 				return null;
+			}
+
+			@Override
+			public void pickShafts(Integer[] selectedShafts) {
+				// TODO Auto-generated method stub
+				
 			}
 		};
 
