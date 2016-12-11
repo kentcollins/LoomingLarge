@@ -1,15 +1,12 @@
-package weaveit2me.looms.rpi;
+package weaveit2me.raspberry;
 
-import weaveit2me.looms.LoomSocket;
+import weaveit2me.core.LoomService;
 
 /**
- * Initializes a RaspberryPi loom controller and makes it available on the local
- * network at the specified port.
+ * Main method for launching a Raspberry Pi based loom server.
  * 
- * @author kentcollins
- *
  */
-public class RPiLoomRunner {
+public class RPiLoomServiceLauncher {
 
 	/**
 	 * 
@@ -22,13 +19,13 @@ public class RPiLoomRunner {
 			port = Integer.parseInt(args[0]);
 		} catch (NumberFormatException e) {
 			System.out
-					.println("The requested port is not a valid port address: "
+					.println("The requested port is not a valid number: "
 							+ args[0]);
 			System.exit(-1);
 		}
 		final RPiLoomController loom = RPiLoomController.getInstance();
-		loom.setup();
-		LoomSocket socket = new LoomSocket(port, loom);
+		loom.setup(8); // assumes RPi connected to one 8-bit shift register
+		LoomService socket = new LoomService(port, loom);
 		socket.run();
 		// socket blocks while listening for loom commands
 		loom.shutdown();

@@ -1,7 +1,7 @@
 package weaveit2me.test;
 
-import weaveit2me.looms.LoomController;
-import weaveit2me.looms.LoomSocket;
+import weaveit2me.core.LoomController;
+import weaveit2me.core.LoomService;
 
 /**
  * Sets up a dummy loom controller on a network socket. Suitable for testing
@@ -17,9 +17,9 @@ public class VirtualLoomRunner {
 		final LoomController loom = new LoomController() {
 
 			@Override
-			public void setShafts(int bitPattern) {
+			public void pickShafts(int[] selectedShafts) {
 				// TODO Auto-generated method stub
-
+				
 			}
 
 			@Override
@@ -51,9 +51,15 @@ public class VirtualLoomRunner {
 				// TODO Auto-generated method stub
 
 			}
+
+			@Override
+			public String getStatus() {
+				// TODO Auto-generated method stub
+				return null;
+			}
 		};
 
-		LoomSocket socket = new LoomSocket(1793, loom);
+		LoomService socket = new LoomService(1793, loom);
 		socket.run();
 		// socket blocks while listening for loom commands
 		System.exit(0);

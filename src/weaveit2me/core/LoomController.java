@@ -1,4 +1,4 @@
-package weaveit2me.looms;
+package weaveit2me.core;
 
 /**
  * Handle weaving process steps.  Implementing classes are expected to configure
@@ -10,7 +10,7 @@ package weaveit2me.looms;
  */
 public interface LoomController {
 
-	void setShafts(int bitPattern);
+	void pickShafts(int[] selectedShafts);
 
 	void openShed();
 
@@ -21,5 +21,7 @@ public interface LoomController {
 	void beat();
 
 	void wind();
+	
+	String getStatus();
 
 }

@@ -1,4 +1,4 @@
-package weaveit2me.looms;
+package weaveit2me.core;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -6,27 +6,25 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Arrays;
 
 /**
- * Opens a network socket and listens for loom commands. Passes incoming
- * commands to a loom controller until an exit signal is received.
- * 
- * @author kentcollins
- *
+ * Opens a network socket and passes incoming commands to a loom 
+ * controller.  Sits between the network and the loom hardware.
  */
 
-public class LoomSocket implements Runnable {
+public class LoomService implements Runnable {
 
 	private int requestedPort;
 	private LoomController loom;
 
-	public LoomSocket(int requestedPort, LoomController loom) {
+	public LoomService(int requestedPort, LoomController loom) {
 		this.requestedPort = requestedPort;
 		this.loom = loom;
 	}
 
 	/**
-	 * Run as a standalone, blocking process -- myLoomSocket.run();
+	 * Run as a standalone, blocking process -- myLoomServer.run();
 	 * 
 	 * Run as a nonblocking thread -- (new Thread(myLoomSocket)).run();
 	 */
@@ -54,19 +52,22 @@ public class LoomSocket implements Runnable {
 						command = LoomCommand.valueOf(commands[0]);
 						out.println("COMMAND_OK " + inputLine);
 						switch (command) {
-						case SET_SHAFTS:
+						case PICK_SHAFTS:
 							if (commands.length > 1) {
 								try {
-									int desiredBits = Integer
-											.parseInt(commands[1]);
-									loom.setShafts(desiredBits);
+									int shafts = commands.length-1;
+									int[] picks = new int[shafts];
+									for (int i = 0; i<commands.length-1; i++) {
+										picks[i] = Integer.parseInt(commands[i+1]);
+									}
+									loom.pickShafts(picks);
 								} catch (NumberFormatException e) {
 									out.println("INVALID_ARGUMENT "
-											+ commands[1]);
+											+ Arrays.asList(commands));
 									break;
 								}
 							} else {
-								loom.setShafts(0);
+								loom.pickShafts(new int[] {0});
 							}
 							break;
 						case OPEN_SHED:
@@ -83,6 +84,9 @@ public class LoomSocket implements Runnable {
 							break;
 						case WIND:
 							loom.wind();
+							break;
+						case GET_STATUS:
+							out.println(loom.getStatus());
 							break;
 						default:
 							break;

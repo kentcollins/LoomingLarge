@@ -1,4 +1,6 @@
-package weaveit2me.looms.rpi;
+package weaveit2me.raspberry;
+
+import java.util.Arrays;
 
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
@@ -7,7 +9,7 @@ import com.pi4j.io.gpio.Pin;
 import com.pi4j.io.gpio.PinState;
 import com.pi4j.io.gpio.RaspiPin;
 
-import weaveit2me.looms.LoomController;
+import weaveit2me.core.LoomController;
 
 /**
  * Translates loom commands into electronic signals for the Raspberry Pi
@@ -16,6 +18,9 @@ import weaveit2me.looms.LoomController;
  *
  */
 public class RPiLoomController implements LoomController {
+	
+	private static int MAX_SHAFTS; // affects shift register ops
+	private static int[] selected; // current selection
 
 	private static final GpioController gpio = GpioFactory.getInstance();
 	private static GpioPinDigitalOutput[] shafts;
@@ -40,7 +45,8 @@ public class RPiLoomController implements LoomController {
 		return currentInstance;
 	}
 
-	public void setup() {
+	public void setup(int shafts) {
+		MAX_SHAFTS = shafts;
 		mapShaftsToPins(RPiLoomController.DEFAULTS);
 	}
 
@@ -48,13 +54,11 @@ public class RPiLoomController implements LoomController {
 	 * Translates a desired shaft pattern into corresponding signals for each
 	 * GPIO pin.
 	 * 
-	 * @param bitPattern
-	 *            a pattern of 1's and 0's specifying which shafts will be
-	 *            prepared for lifting. The least significant bit corresponds to
-	 *            the first shaft.
+	 * @param String
+	 *            a space delimited sequence of integers
 	 */
 	@Override
-	public void setShafts(int bitPattern) {
+	public void pickShafts(int[] shafts) {
 		/*
 		 * Starting from the least significant bit, test each bit in the
 		 * provided integer to see if it holds a 1. If so, set the corresponding
@@ -63,13 +67,14 @@ public class RPiLoomController implements LoomController {
 		 * (ie for an eight shaft loom, reads only the eight least significant
 		 * bits.)
 		 */
-		for (int p = 0; p < shafts.length; p++) {
-			boolean shouldBeEnergized = ((bitPattern >> p) & 1) == 1;
-			if (shouldBeEnergized) {
-				shafts[p].high();
-			} else
-				shafts[p].low();
-		}
+//		for (int p = 0; p < shafts.length; p++) {
+//			boolean shouldBeEnergized = ((bitPattern >> p) & 1) == 1;
+//			if (shouldBeEnergized) {
+//				shafts[p].high();
+//			} else
+//				shafts[p].low();
+//		}
+		selected = shafts;
 	}
 
 	@Override
@@ -123,6 +128,11 @@ public class RPiLoomController implements LoomController {
 			p.setShutdownOptions(true, PinState.LOW);
 			shafts[i] = p;
 		}
+	}
+
+	@Override
+	public String getStatus() {
+		return "A-OK"+"\tCurrently holding: "+Arrays.asList(selected);
 	}
 
 }
