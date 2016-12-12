@@ -6,5 +6,5 @@ package weaveit2me.core;
  *
  */
 public enum LoomCommand {
-	PICK, OPEN, CLOSE, WEAVE, BEAT, WIND, STATUS;
+	PICK, OPEN, CLOSE, WEAVE, BEAT, WIND, STATUS, CUSTOM, STARTUP, SHUTDOWN;
 }

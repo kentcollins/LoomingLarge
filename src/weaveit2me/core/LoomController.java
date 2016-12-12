@@ -46,5 +46,21 @@ public interface LoomController {
 	 * @return
 	 */
 	String getStatus();
+	
+	/**
+	 * Handle custom commands
+	 * @param s
+	 */
+	void custom(String s);
+	
+	/**
+	 * Prepare loom for operation
+	 */
+	void startup();
+	
+	/**
+	 * Prepare loom for shutting down
+	 */
+	void shutdown();
 
 }

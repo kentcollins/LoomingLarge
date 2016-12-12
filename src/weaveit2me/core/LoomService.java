@@ -49,7 +49,7 @@ public class LoomService implements Runnable {
 					String[] commands = inputLine.trim().split(" ");
 					LoomCommand command = null;
 					try {
-						command = LoomCommand.valueOf(commands[0]);
+						command = LoomCommand.valueOf(commands[0].toUpperCase());
 						out.println("COMMAND_OK " + inputLine);
 						switch (command) {
 						case PICK:
@@ -88,6 +88,16 @@ public class LoomService implements Runnable {
 						case STATUS:
 							out.println(loom.getStatus());
 							break;
+						case STARTUP:
+							loom.startup();
+						case SHUTDOWN:
+							loom.shutdown();
+						case CUSTOM:
+							StringBuilder sb = new StringBuilder();
+							for (int i = 1; i<commands.length; i++) {
+								sb.append(commands[i]+" ");
+							}
+							loom.custom(sb.toString());
 						default:
 							break;
 						}

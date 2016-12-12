@@ -24,7 +24,7 @@ public class RPiLoomServiceLauncher {
 			System.exit(-1);
 		}
 		final RPiLoomController loom = RPiLoomController.getInstance();
-		loom.setup(8); // assumes RPi connected to one 8-bit shift register
+		loom.startup(); // assumes RPi connected to one 8-bit shift register
 		LoomService socket = new LoomService(port, loom);
 		socket.run();
 		// socket blocks while listening for loom commands
