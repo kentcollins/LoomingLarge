@@ -6,6 +6,7 @@ import java.util.TreeSet;
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
+import com.pi4j.io.gpio.GpioPinPwmOutput;
 import com.pi4j.io.gpio.Pin;
 import com.pi4j.io.gpio.PinState;
 import com.pi4j.io.gpio.RaspiPin;
@@ -27,6 +28,7 @@ public class RPiLoomController implements LoomController {
 	private static final GpioController gpio = GpioFactory.getInstance();
 
 	private GpioPinDigitalOutput dataPin, shiftPin, strobePin, oenablePin;
+	private GpioPinDigitalOutput servoPin;
 
 	/**
 	 * Singleton controller using default pin assignments.
@@ -41,9 +43,11 @@ public class RPiLoomController implements LoomController {
 		// strobe pin latches current values to the register
 		strobePin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_01, PinState.LOW);
 		strobePin.setShutdownOptions(true, PinState.LOW);
-		// oenable pin makes values available 
+		// oenable pin makes values available
 		oenablePin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_04, PinState.LOW);
 		oenablePin.setShutdownOptions(true, PinState.LOW);
+		servoPin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_03, PinState.LOW);
+		servoPin.setShutdownOptions(true, PinState.LOW);
 	}
 
 	/**
@@ -64,7 +68,7 @@ public class RPiLoomController implements LoomController {
 	public void setup(int shafts) {
 		MAX_SHAFTS = shafts;
 		Integer zero = new Integer(0);
-		selected = new Integer[] {zero};
+		selected = new Integer[] { zero };
 	}
 
 	/**
@@ -203,30 +207,80 @@ public class RPiLoomController implements LoomController {
 
 	@Override
 	public void custom(String s) {
-		System.out.println("Received custom command "+s);
+		System.out.println("Received custom command " + s);
 		String[] commands = s.split(" ");
-		String pin = commands[0].trim().toUpperCase();
-		String signal = commands[1].trim().toUpperCase();
+		String arg1 = commands[0].trim().toUpperCase();
+		String arg2 = commands[1].trim().toUpperCase();
 		GpioPinDigitalOutput chosen = null;
 		PinState state = null;
-		if (pin.equals("STROBE")) {
+		if (arg1.equals("STROBE")) {
 			chosen = shiftPin;
-		} else if (pin.equals("CLOCK")) {
+		} else if (arg1.equals("CLOCK")) {
 			chosen = strobePin;
-		} else if (pin.equals("DATA")) {
+		} else if (arg1.equals("DATA")) {
 			chosen = dataPin;
-		} else if (pin.equals("OE")) {
+		} else if (arg1.equals("OE")) {
 			chosen = oenablePin;
+		} else if (arg1.equals("SERVO")) {
+			if (commands.length<3) return;
+			String arg3 = commands[2].trim().toUpperCase();
+			System.out.println(arg1+":"+arg2+":"+arg3);
+			long timeInMillis = Long.parseLong(arg3);
+			if (arg2.equals("HIGH")){
+				System.out.println("Sending servo high");
+				pulseServoHigh(timeInMillis);
+			} else if (arg2.equals("LOW")){
+				System.out.println("Sending servo low");
+				pulseServoLow(timeInMillis);
+			}
 		}
-		if (signal.equals("HIGH")) {
+		if (arg2.equals("HIGH")) {
 			state = PinState.HIGH;
-		} else if (signal.equals("LOW")) {
+		} else if (arg2.equals("LOW")) {
 			state = PinState.LOW;
 		}
-		if (chosen!=null && state!=null) {
-			System.out.println("Setting "+pin+" to "+signal);
+		if (chosen != null && state != null) {
+			System.out.println("Setting " + arg1 + " to " + arg2);
 			chosen.setState(state);
 		}
+
+	}
+
+	private void pulseServoHigh(long millis) {
+		long secondsToSpin = 1_000_000 * millis;
+		long startTime = System.nanoTime();
+		while (System.nanoTime() < startTime + secondsToSpin) {
+			try {
+				servoPin.setState(PinState.HIGH);
+				// 2400 us = 2ms and 400_000 ns
+				Thread.sleep(2, 400_000);
+				servoPin.setState(PinState.LOW);
+				Thread.sleep(17, 600_000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+	}
+
+	private void pulseServoLow(long millis) {
+		long reqDuration = 1_000_000L * millis;
+		long startTime = System.nanoTime();
+		while (System.nanoTime() < startTime + reqDuration) {
+			try {
+				servoPin.setState(PinState.HIGH);
+				// 554 us = 554_000 ns
+				Thread.sleep(0,554_000);
+				servoPin.setState(PinState.LOW);
+				// 19,446 us = 19 ms and 446_000ns
+				Thread.sleep(19, 446_000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		System.out.println("Started servo high "+startTime+"\nconcluded at "+System.nanoTime());
 
 	}
 
