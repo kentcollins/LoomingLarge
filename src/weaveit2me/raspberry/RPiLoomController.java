@@ -6,10 +6,8 @@ import java.util.TreeSet;
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
-import com.pi4j.io.gpio.GpioPinPwmOutput;
 import com.pi4j.io.gpio.PinState;
 import com.pi4j.io.gpio.RaspiPin;
-import com.pi4j.wiringpi.Gpio;
 
 import weaveit2me.core.LoomController;
 
@@ -23,11 +21,12 @@ public class RPiLoomController implements LoomController {
 
 	private static RPiLoomController currentInstance = null;
 	private static int MAX_SHAFTS; // informs shift register ops
-	private static Integer[] selected; // current selection
+	private static SortedSet<Integer> selected; // latest data received
+	private static final SortedSet<Integer> NO_SHAFTS = new TreeSet<Integer>();
 
 	private static final GpioController gpio = GpioFactory.getInstance();
 
-	private GpioPinDigitalOutput ssrData; // serial data 
+	private GpioPinDigitalOutput ssrData; // serial data
 	private GpioPinDigitalOutput ssrClock; // clock performs shift
 	private GpioPinDigitalOutput ssrStrobe; // latches (stores) data
 	private GpioPinDigitalOutput ssrOEnable; // makes data available
@@ -53,9 +52,8 @@ public class RPiLoomController implements LoomController {
 	 * Returns the active controller.
 	 */
 	public static RPiLoomController getInstance() {
-		if (currentInstance != null)
-			return currentInstance;
-		currentInstance = new RPiLoomController();
+		if (currentInstance == null)
+			currentInstance = new RPiLoomController();
 		return currentInstance;
 	}
 
@@ -66,8 +64,6 @@ public class RPiLoomController implements LoomController {
 	 */
 	public void setup(int shafts) {
 		MAX_SHAFTS = shafts;
-		Integer zero = new Integer(0);
-		selected = new Integer[] { zero };
 	}
 
 	/**
@@ -79,76 +75,60 @@ public class RPiLoomController implements LoomController {
 	 */
 	@Override
 	public void pickShafts(Integer[] shafts) {
-		selected = shafts;
-	}
-
-	@Override
-	public void openShed() {
-		SortedSet<Integer> orderedPicks = sanitizeSelection();
-		loadShaftDataRegister(orderedPicks);
-		latchSelectedShafts();
-		lift();
-	}
-
-	private SortedSet<Integer> sanitizeSelection() {
-		// place shafts in order, remove duplicates
 		SortedSet<Integer> picks = new TreeSet<Integer>();
-		for (int i = 0; i < selected.length; i++) {
+		for (int i = 0; i < shafts.length; i++) {
 			// disregard shafts we cannot operate
-			Integer proposed = selected[i];
+			Integer proposed = shafts[i];
 			if (proposed > 0 && proposed <= MAX_SHAFTS) {
 				picks.add(proposed);
 			}
 		}
-		return picks;
+		selected = picks;
 	}
 
-	private void loadShaftDataRegister(SortedSet<Integer> orderedPicks) {
+	@Override
+	public void openShed() {
+		try {
+			loadShaftDataRegister();
+			latchSelectedShafts();
+		} catch (InterruptedException e) {
+			// TODO Something went wrong while loading data
+			e.printStackTrace();
+		}
+		lift();
+	}
+
+	private void loadShaftDataRegister(SortedSet<Integer> picks) throws InterruptedException {
 		ssrData.setState(PinState.LOW);
 		ssrClock.setState(PinState.LOW);
 		ssrStrobe.setState(PinState.LOW);
 		ssrOEnable.setState(PinState.LOW);
 		for (Integer i = 1; i <= MAX_SHAFTS; i++) {
-			if (orderedPicks.contains(i)) {
+			if (picks.contains(i)) {
 				ssrData.setState(PinState.HIGH);
-
 			} else {
 				ssrData.setState(PinState.LOW);
 			}
-			try {
-				Thread.sleep(1);
-			} catch (InterruptedException e1) {
-				e1.printStackTrace();
-			}
-			// provide rising clock edge
+			Thread.sleep(1);
 			ssrClock.setState(PinState.HIGH);
-			try {
-				Thread.sleep(1);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			Thread.sleep(1);
 			ssrClock.setState(PinState.LOW);
 		}
 		ssrStrobe.setState(PinState.HIGH);
-		try {
-			Thread.sleep(1);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
 		ssrStrobe.setState(PinState.LOW);
 		ssrOEnable.setState(PinState.HIGH);
 	}
 
-	private void latchSelectedShafts() {
-		enableServos();
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		disableServos();
+	private void loadShaftDataRegister() throws InterruptedException {
+		loadShaftDataRegister(selected);
+	}
 
+	private void latchSelectedShafts() throws InterruptedException {
+		enableServos();
+		Thread.sleep(500);
+		loadShaftDataRegister(NO_SHAFTS);
+		Thread.sleep(500);
+		disableServos();
 	}
 
 	private void enableServos() {
