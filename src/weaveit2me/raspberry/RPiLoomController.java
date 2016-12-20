@@ -21,7 +21,7 @@ public class RPiLoomController implements LoomController {
 
 	private static RPiLoomController currentInstance = null;
 	private static int MAX_SHAFTS; // informs shift register ops
-	private static SortedSet<Integer> selected; // latest data received
+	private static SortedSet<Integer> currentShaftPicks; // latest data
 	private static final SortedSet<Integer> NO_SHAFTS = new TreeSet<Integer>();
 
 	private static final GpioController gpio = GpioFactory.getInstance();
@@ -42,7 +42,7 @@ public class RPiLoomController implements LoomController {
 		ssrClock.setShutdownOptions(true, PinState.LOW);
 		ssrStrobe = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_01, PinState.LOW);
 		ssrStrobe.setShutdownOptions(true, PinState.LOW);
-		ssrOEnable = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_04, PinState.LOW);
+		ssrOEnable = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_04, PinState.HIGH);
 		ssrOEnable.setShutdownOptions(true, PinState.LOW);
 		servoEnable = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_03, PinState.LOW);
 		servoEnable.setShutdownOptions(true, PinState.LOW);
@@ -61,9 +61,12 @@ public class RPiLoomController implements LoomController {
 	 * Take care of platform specific initialization.
 	 * 
 	 * @param shafts
+	 * @throws InterruptedException 
 	 */
-	public void setup(int shafts) {
+	public void setup(int shafts) throws InterruptedException {
 		MAX_SHAFTS = shafts;
+		loadShaftDataRegister(NO_SHAFTS);
+		engageSelectedShafts();
 	}
 
 	/**
@@ -83,14 +86,14 @@ public class RPiLoomController implements LoomController {
 				picks.add(proposed);
 			}
 		}
-		selected = picks;
+		currentShaftPicks = picks;
 	}
 
 	@Override
 	public void openShed() {
 		try {
 			loadShaftDataRegister();
-			latchSelectedShafts();
+			engageSelectedShafts();
 		} catch (InterruptedException e) {
 			// TODO Something went wrong while loading data
 			e.printStackTrace();
@@ -103,43 +106,35 @@ public class RPiLoomController implements LoomController {
 		ssrClock.setState(PinState.LOW);
 		ssrStrobe.setState(PinState.LOW);
 		ssrOEnable.setState(PinState.LOW);
+		Thread.sleep(0, 500);
 		for (Integer i = 1; i <= MAX_SHAFTS; i++) {
 			if (picks.contains(i)) {
 				ssrData.setState(PinState.HIGH);
 			} else {
 				ssrData.setState(PinState.LOW);
 			}
-			Thread.sleep(1);
+			Thread.sleep(0,500);
 			ssrClock.setState(PinState.HIGH);
-			Thread.sleep(1);
+			Thread.sleep(0,500);
 			ssrClock.setState(PinState.LOW);
 		}
 		ssrStrobe.setState(PinState.HIGH);
+		Thread.sleep(0, 500);
 		ssrStrobe.setState(PinState.LOW);
 		ssrOEnable.setState(PinState.HIGH);
 	}
 
 	private void loadShaftDataRegister() throws InterruptedException {
-		loadShaftDataRegister(selected);
+		loadShaftDataRegister(currentShaftPicks);
 	}
 
-	private void latchSelectedShafts() throws InterruptedException {
-		enableServos();
-		Thread.sleep(500);
-		loadShaftDataRegister(NO_SHAFTS);
-		Thread.sleep(500);
-		disableServos();
-	}
+	private void engageSelectedShafts() throws InterruptedException {
 
-	private void enableServos() {
-		// mux is low enable
-		servoEnable.setState(PinState.LOW);
-	}
-
-	private void disableServos() {
-		// no signal to servos
 		servoEnable.setState(PinState.HIGH);
-
+		Thread.sleep(500);
+		servoEnable.setState(PinState.LOW);
+		loadShaftDataRegister(NO_SHAFTS);
+		Thread.sleep(1000);
 	}
 
 	private void lift() {
@@ -179,8 +174,8 @@ public class RPiLoomController implements LoomController {
 	public String getStatus() {
 		String response = "";
 		response += "A-OK\tPicked for latching: ";
-		if (selected != null) {
-			for (int i : selected) {
+		if (currentShaftPicks != null) {
+			for (int i : currentShaftPicks) {
 				response += i + " ";
 			}
 		} else {
@@ -205,11 +200,9 @@ public class RPiLoomController implements LoomController {
 			chosen = ssrData;
 		} else if (arg1.equals("OE")) {
 			chosen = ssrOEnable;
-		} else if (arg1.equals("LATCH")) {
-			enableServos();
-		} else if (arg1.equals("UNLATCH")) {
-			disableServos();
-		}
+		} else if (arg1.equals("SERVO")) {
+			chosen = servoEnable;
+		} 
 		if (arg2.equals("HIGH")) {
 			state = PinState.HIGH;
 		} else if (arg2.equals("LOW")) {
@@ -224,7 +217,12 @@ public class RPiLoomController implements LoomController {
 
 	@Override
 	public void startup() {
-		setup(8);
+		try {
+			setup(8);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 }
