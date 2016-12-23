@@ -4,8 +4,8 @@ import weaveit2me.core.LoomController;
 import weaveit2me.core.LoomService;
 
 /**
- * Sets up a dummy loom controller on a network socket. Suitable for testing
- * loom command software in the absence of loom hardware.
+ * Sets up a dummy loom controller on a network socket. Suitable for
+ * testing loom command software in the absence of loom hardware.
  * 
  * @author kentcollins
  *
@@ -18,44 +18,63 @@ public class VirtualLoomRunner {
 
 			@Override
 			public void openShed() {
-				// TODO Auto-generated method stub
+				System.out.println("Virtual Loom received command to open shed");
 
 			}
 
 			@Override
 			public void closeShed() {
-				// TODO Auto-generated method stub
+				System.out.println("Virtual Loom received command to close shed");
 
 			}
 
 			@Override
 			public void weave() {
-				// TODO Auto-generated method stub
+				System.out.println("Virtual Loom received command to weave");
 
 			}
 
 			@Override
 			public void beat() {
-				// TODO Auto-generated method stub
+				System.out.println("Virtual Loom received command to beat");
 
 			}
 
 			@Override
 			public void wind() {
-				// TODO Auto-generated method stub
+				System.out.println("Virtual Loom received command to wind warp");
 
 			}
 
 			@Override
 			public String getStatus() {
-				// TODO Auto-generated method stub
-				return null;
+				return "Attached to a virtual loom.";
 			}
 
 			@Override
 			public void pickShafts(Integer[] selectedShafts) {
-				// TODO Auto-generated method stub
-				
+				System.out.println("Virtual Loom received command to pick shafts\n\t");
+				for (Integer i : selectedShafts) {
+					System.out.print(i+" ");
+				}
+				System.out.println();
+			}
+
+			@Override
+			public void custom(String s) {
+				System.out.println("Virtual Loom received custom command: \n\t"+s);
+			}
+
+			@Override
+			public void startup() {
+				System.out.println("Virtual Loom received command to startup");
+
+			}
+
+			@Override
+			public void shutdown() {
+				System.out.println("Virtual Loom received command to shutdown");
+
 			}
 		};
 
