@@ -1,5 +1,6 @@
 package weaveit2me.raspberry;
 
+import java.io.IOException;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -10,6 +11,7 @@ import com.pi4j.io.gpio.PinState;
 import com.pi4j.io.gpio.RaspiPin;
 
 import weaveit2me.core.LoomController;
+import weaveit2me.network.LoomStatusServer;
 
 /**
  * Translates loom commands into electronic signals for the Raspberry Pi
@@ -23,6 +25,7 @@ public class RPiLoomController implements LoomController {
 	private static int MAX_SHAFTS; // informs shift register ops
 	private static SortedSet<Integer> currentShaftPicks; // latest data
 	private static final SortedSet<Integer> NO_SHAFTS = new TreeSet<Integer>();
+	private LoomStatusServer statusServer;
 
 	private static final GpioController gpio = GpioFactory.getInstance();
 
@@ -46,6 +49,15 @@ public class RPiLoomController implements LoomController {
 		ssrOEnable.setShutdownOptions(true, PinState.LOW);
 		servoEnable = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_03, PinState.LOW);
 		servoEnable.setShutdownOptions(true, PinState.LOW);
+		try {
+			statusServer = new LoomStatusServer();
+			statusServer.attach(this);
+			statusServer.run();
+			statusServer.requestBroadcast();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -171,16 +183,9 @@ public class RPiLoomController implements LoomController {
 	}
 
 	@Override
-	public String getStatus() {
-		String response = "";
-		response += "A-OK\tPicked for latching: ";
-		if (currentShaftPicks != null) {
-			for (int i : currentShaftPicks) {
-				response += i + " ";
-			}
-		} else {
-			response += "no shafts selected yet.";
-		}
+	public byte[] getStatus() {
+		byte[] response = new byte[256];
+		
 		return response;
 	}
 

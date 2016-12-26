@@ -47,8 +47,8 @@ public class VirtualLoomRunner {
 			}
 
 			@Override
-			public String getStatus() {
-				return "Attached to a virtual loom.";
+			public byte[] getStatus() {
+				return "Attached to a virtual loom.".getBytes();
 			}
 
 			@Override

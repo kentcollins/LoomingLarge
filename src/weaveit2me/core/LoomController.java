@@ -45,7 +45,7 @@ public interface LoomController {
 	 * Retrieve status information
 	 * @return
 	 */
-	String getStatus();
+	byte[] getStatus();
 	
 	/**
 	 * Handle custom commands
