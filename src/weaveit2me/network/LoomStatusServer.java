@@ -17,11 +17,10 @@ public class LoomStatusServer extends Thread {
 
 	protected MulticastSocket socket = null;
 	protected boolean inService = true;
-	protected boolean broadcastRequested = false;
-	public static final String MULTICAST_GROUP = "203.17.93.0";
-	public static final int MULTICAST_PORT = 1793;
+	public static final String MULTICAST_GROUP = "225.6.7.8";
+	public static final int MULTICAST_PORT = 1884;
 	public static final int MAX_LENGTH = 1024;
-	private LoomController loom = null;
+	private InetAddress group;
 
 	public LoomStatusServer() throws IOException {
 		this("LoomStatusServer");
@@ -30,33 +29,26 @@ public class LoomStatusServer extends Thread {
 	public LoomStatusServer(String name) throws IOException {
 		super(name);
 		socket = new MulticastSocket(MULTICAST_PORT);
+		group = InetAddress.getByName(MULTICAST_GROUP);
 	}
-
+	
 	public void run() {
-		while (inService) {
-			if (loom!=null && broadcastRequested) {
-				try {
-					byte[] buf = loom.getStatus();
-					InetAddress group = InetAddress.getByName(MULTICAST_GROUP);
-					DatagramPacket packet;
-					packet = new DatagramPacket(buf, buf.length, group, MULTICAST_PORT);
-					socket.send(packet);
-					broadcastRequested = false;
-				} catch (IOException e) {
-					e.printStackTrace();
-					inService = false;
-				}
-			}
-		}
+		while (inService) {}
 		socket.close();
 	}
 
-	public void requestBroadcast() {
-		broadcastRequested = true;
+	public void send(byte[] status) {
+		DatagramPacket p = new DatagramPacket(status, status.length, group, MULTICAST_PORT);
+		try {
+			socket.send(p);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
-	public void attach(LoomController loom) {
-		this.loom = loom;
+	public void shutdown() {
+		inService = false;
 	}
 
 }

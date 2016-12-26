@@ -14,7 +14,8 @@ import weaveit2me.core.LoomController;
 import weaveit2me.network.LoomStatusServer;
 
 /**
- * Translates loom commands into electronic signals for the Raspberry Pi
+ * Translates loom commands into electronic signals for the Raspberry
+ * Pi
  * 
  * @author kentcollins
  *
@@ -23,7 +24,8 @@ public class RPiLoomController implements LoomController {
 
 	private static RPiLoomController currentInstance = null;
 	private static int MAX_SHAFTS; // informs shift register ops
-	private static SortedSet<Integer> currentShaftPicks; // latest data
+	private static SortedSet<Integer> currentShaftPicks; // latest
+															// data
 	private static final SortedSet<Integer> NO_SHAFTS = new TreeSet<Integer>();
 	private LoomStatusServer statusServer;
 
@@ -50,12 +52,14 @@ public class RPiLoomController implements LoomController {
 		servoEnable = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_03, PinState.LOW);
 		servoEnable.setShutdownOptions(true, PinState.LOW);
 		try {
+			System.out.println("Starting server");
 			statusServer = new LoomStatusServer();
-			statusServer.attach(this);
-			statusServer.run();
-			statusServer.requestBroadcast();
+			System.out.println("Running Thread");
+			statusServer.start();
+			System.out.println("Broadcasting: ");
+			statusServer.send("System Status OK".getBytes());
+
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -73,7 +77,7 @@ public class RPiLoomController implements LoomController {
 	 * Take care of platform specific initialization.
 	 * 
 	 * @param shafts
-	 * @throws InterruptedException 
+	 * @throws InterruptedException
 	 */
 	public void setup(int shafts) throws InterruptedException {
 		MAX_SHAFTS = shafts;
@@ -82,8 +86,8 @@ public class RPiLoomController implements LoomController {
 	}
 
 	/**
-	 * Translates a desired shaft pattern into corresponding signals for each
-	 * GPIO pin.
+	 * Translates a desired shaft pattern into corresponding signals
+	 * for each GPIO pin.
 	 * 
 	 * @param String
 	 *            a space delimited sequence of integers
@@ -125,9 +129,9 @@ public class RPiLoomController implements LoomController {
 			} else {
 				ssrData.setState(PinState.LOW);
 			}
-			Thread.sleep(0,500);
+			Thread.sleep(0, 500);
 			ssrClock.setState(PinState.HIGH);
-			Thread.sleep(0,500);
+			Thread.sleep(0, 500);
 			ssrClock.setState(PinState.LOW);
 		}
 		ssrStrobe.setState(PinState.HIGH);
@@ -206,7 +210,7 @@ public class RPiLoomController implements LoomController {
 			chosen = ssrOEnable;
 		} else if (arg1.equals("SERVO")) {
 			chosen = servoEnable;
-		} 
+		}
 		if (arg2.equals("HIGH")) {
 			state = PinState.HIGH;
 		} else if (arg2.equals("LOW")) {

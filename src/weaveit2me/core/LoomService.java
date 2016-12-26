@@ -30,7 +30,7 @@ public class LoomService implements Runnable {
 	 */
 	@Override
 	public void run() {
-		System.out.println("Opening port: " + requestedPort);
+		System.out.println("Opening loom service on port: " + requestedPort);
 		try (ServerSocket serverSocket = new ServerSocket(requestedPort);
 				// next line blocks, awaiting a connection
 				Socket clientSocket = serverSocket.accept();

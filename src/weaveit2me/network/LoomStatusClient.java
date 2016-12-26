@@ -5,6 +5,14 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 
+/***
+ * Listens for loom status broadcasts. On OSx may need to enable
+ * multicasting specifically for the given port. Additional details:
+ * http://www.thomasqvarnstrom.com/2015/06/multicasting-routing-on-mac.html
+ * and also run client with VM option: -Djava.net.preferIPv4Stack=true
+ *
+ */
+
 public class LoomStatusClient extends Thread {
 
 	public static void main(String[] args) throws IOException {
