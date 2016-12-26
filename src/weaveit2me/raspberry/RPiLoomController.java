@@ -184,8 +184,7 @@ public class RPiLoomController implements LoomController {
 
 	@Override
 	public byte[] getStatus() {
-		byte[] response = new byte[256];
-		
+		byte[] response = "The RPi Loom Controller is alive.".getBytes();
 		return response;
 	}
 

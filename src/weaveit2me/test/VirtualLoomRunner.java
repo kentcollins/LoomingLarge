@@ -48,7 +48,7 @@ public class VirtualLoomRunner {
 
 			@Override
 			public byte[] getStatus() {
-				return "Attached to a virtual loom.".getBytes();
+				return "The Virtual Loom Runner is alive.".getBytes();
 			}
 
 			@Override
