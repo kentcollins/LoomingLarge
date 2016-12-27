@@ -11,6 +11,7 @@ import com.pi4j.io.gpio.PinState;
 import com.pi4j.io.gpio.RaspiPin;
 
 import weaveit2me.core.LoomController;
+import weaveit2me.core.LoomStatus;
 import weaveit2me.network.LoomStatusServer;
 
 /**
@@ -26,7 +27,7 @@ public class RPiLoomController implements LoomController {
 	private static int MAX_SHAFTS; // informs shift register ops
 	private static SortedSet<Integer> currentShaftPicks; // latest
 															// data
-	private static final SortedSet<Integer> NO_SHAFTS = new TreeSet<Integer>();
+	private static final SortedSet<Integer> SELECT_NO_SHAFTS = new TreeSet<Integer>();
 	private LoomStatusServer statusServer;
 
 	private static final GpioController gpio = GpioFactory.getInstance();
@@ -51,7 +52,13 @@ public class RPiLoomController implements LoomController {
 		ssrOEnable.setShutdownOptions(true, PinState.LOW);
 		servoEnable = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_03, PinState.LOW);
 		servoEnable.setShutdownOptions(true, PinState.LOW);
+	}
+
+	@Override
+	public void startup() {
 		try {
+			MAX_SHAFTS = 8; // default; may be modified
+			LoomStatus.initialize();
 			System.out.println("Starting server");
 			statusServer = new LoomStatusServer();
 			System.out.println("Running Thread");
@@ -60,6 +67,7 @@ public class RPiLoomController implements LoomController {
 			statusServer.send("System Status OK".getBytes());
 
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -71,18 +79,6 @@ public class RPiLoomController implements LoomController {
 		if (currentInstance == null)
 			currentInstance = new RPiLoomController();
 		return currentInstance;
-	}
-
-	/**
-	 * Take care of platform specific initialization.
-	 * 
-	 * @param shafts
-	 * @throws InterruptedException
-	 */
-	public void setup(int shafts) throws InterruptedException {
-		MAX_SHAFTS = shafts;
-		loadShaftDataRegister(NO_SHAFTS);
-		engageSelectedShafts();
 	}
 
 	/**
@@ -149,7 +145,7 @@ public class RPiLoomController implements LoomController {
 		servoEnable.setState(PinState.HIGH);
 		Thread.sleep(500);
 		servoEnable.setState(PinState.LOW);
-		loadShaftDataRegister(NO_SHAFTS);
+		loadShaftDataRegister(SELECT_NO_SHAFTS);
 		Thread.sleep(1000);
 	}
 
@@ -222,15 +218,9 @@ public class RPiLoomController implements LoomController {
 		}
 
 	}
-
-	@Override
-	public void startup() {
-		try {
-			setup(8);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	
+	public void setNumShafts(int n) {
+		MAX_SHAFTS = n;
 	}
 
 }
