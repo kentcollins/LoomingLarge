@@ -127,8 +127,7 @@ public class Status {
 
 	public void setShedStatus(int shedStatus) {
 		loomStatus.put(SHED_BYTE, (byte) shedStatus);
-		publish(SHED_STATE, "Shed updated to "+shedStatus);
-		
+		publish(SHED_STATE, "Shed updated to " + shedStatus);
 	}
 
 	public int getShedStatus() {
@@ -141,6 +140,8 @@ public class Status {
 
 	public void setShaftStatus(int shaftStatus) {
 		loomStatus.put(SHAFT_BYTE, (byte) shaftStatus);
+		publish(SHAFT_STATE, "Shafts updated to " + shaftStatus);
+
 	}
 
 	public int getShaftStatus() {
@@ -152,6 +153,8 @@ public class Status {
 
 	public void setWarpStatus(int warpStatus) {
 		loomStatus.put(WARP_BYTE, (byte) warpStatus);
+		publish(WARP_STATE, "Warp updated to " + warpStatus);
+
 	}
 
 	public int getWarpStatus() {
@@ -164,6 +167,7 @@ public class Status {
 
 	public void setWeftStatus(int weftStatus) {
 		loomStatus.put(WEFT_BYTE, (byte) weftStatus);
+		publish(WEFT_STATE, "Weft updated to "+weftStatus);
 	}
 
 	public int getWeftStatus() {
@@ -176,6 +180,8 @@ public class Status {
 
 	public void setBeaterStatus(int beaterStatus) {
 		loomStatus.put(BEATER_BYTE, (byte) beaterStatus);
+		publish(BEATER_STATE, "Beater updated to " + beaterStatus);
+
 	}
 
 	public int getBeaterStatus() {
@@ -187,6 +193,8 @@ public class Status {
 
 	public void setControlStatus(int controlStatus) {
 		loomStatus.put(CONTROL_BYTE, (byte) controlStatus);
+		publish(CONTROL_EVENT, "Controls updated to " + controlStatus);
+
 	}
 
 	public int getControlStatus() {
@@ -201,14 +209,14 @@ public class Status {
 		byte flags = loomStatus.get(CONTROL_BYTE);
 		if ((flags & flag) == 0)
 			flags += flag;
-		loomStatus.put(CONTROL_BYTE, flags);
+		setControlStatus(flags);
 	}
 
 	public void clearControlFlag(int flag) {
 		byte flags = loomStatus.get(CONTROL_BYTE);
 		if ((flags & flag) == flag)
 			flags -= flag;
-		loomStatus.put(CONTROL_BYTE, flags);
+		setControlStatus(flags);
 	}
 
 	public boolean checkFlag(int flag) {
@@ -223,6 +231,8 @@ public class Status {
 
 	public void setFaultStatus(int faultStatus) {
 		loomStatus.put(FAULT_BYTE, (byte) faultStatus);
+		publish(FAULT_RECEIVED, "Faults updated to " + faultStatus);
+
 	}
 
 	public int getFaultStatus() {
@@ -235,6 +245,7 @@ public class Status {
 
 	public void setCurrentLift(int currentLift) {
 		loomStatus.putInt(LIFT_BYTE, currentLift);
+		publish(CONTROL_EVENT, "Next lift changed to "+currentLift);
 	}
 
 	public int getCurrentLift() {
@@ -304,8 +315,10 @@ public class Status {
 	public void publish(int event, String msg) {
 		setEvent(event);
 		setMessage(msg);
-		if (logging) LOGGER.log(Level.INFO, msg);
-		if (multicast && server!= null) server.send(loomStatus.array());
+		if (logging)
+			LOGGER.log(Level.INFO, msg);
+		if (multicast && server != null)
+			server.send(loomStatus.array());
 	}
 
 	public String toString() {
@@ -332,23 +345,20 @@ public class Status {
 		return sb.toString();
 	}
 
-	// public static void main(String[] args) { // Test the class
-	// LoomStatus.initialize();
-	// LoomStatus.setEvent(SHED_TRANSITION);
-	// LoomStatus.setShedStatus(SHED_CLOSED);
-	// LoomStatus.setShaftStatus(SHAFTS_DISENGAGED);
-	// LoomStatus.setWarpStatus(WARP_NO_STATUS);
-	// LoomStatus.setWeftStatus(WEFT_NO_STATUS);
-	// LoomStatus.setBeaterStatus(BEATER_NO_STATUS);
-	// LoomStatus.setControlFlag(PLAN_FLAG);
-	// LoomStatus.setControlFlag(LOOPING_FLAG);
-	// LoomStatus.setFaultStatus(FAULT_NONE);
-	// LoomStatus.setCurrentLift(52);
-	// System.out.println(LoomStatus.toString(LoomStatus.toByteArray()));
-	// LoomStatus.clearControlFlag(LOOPING_FLAG);
-	// System.out.println(LoomStatus
-	// .toString(LoomStatus.prepareBroadcastPacket(0, "Test2")));
-	//
-	// }
+//	public static void main(String[] args) { // Test the class
+//		Status s = new Status();
+//		s.setEvent(SHED_TRANSITION);
+//		s.setShedStatus(SHED_CLOSED);
+//		s.setShaftStatus(SHAFTS_DISENGAGED);
+//		s.setWarpStatus(WARP_NO_STATUS);
+//		s.setWeftStatus(WEFT_NO_STATUS);
+//		s.setBeaterStatus(BEATER_NO_STATUS);
+//		s.setControlFlag(PLAN_FLAG);
+//		s.setControlFlag(LOOPING_FLAG);
+//		s.setFaultStatus(FAULT_NONE);
+//		s.setCurrentLift(52);
+//		s.clearControlFlag(LOOPING_FLAG);
+//		System.out.println(s.toString());
+//	}
 
 }

@@ -25,17 +25,13 @@ public class RPiLoomLauncher {
 		int commandPort = 1793;
 		int multicastPort = 1884;
 		String multicastGroup = "225.6.7.8";
-
 		RPiLoom loom = RPiLoom.getInstance();
 		Status status = (Status) loom.getStatus();
-		StatusServer statusServer = new StatusServer("Status Server",
-				multicastGroup, multicastPort);
-		statusServer.start();
+		StatusServer statusServer = new StatusServer(multicastGroup,multicastPort);
 		status.registerServer(statusServer);
 		loom.startup(); // default: 8 shafts
-
-		CommandServer socket = new CommandServer(commandPort, loom);
-		socket.run();
+		CommandServer commandServer = new CommandServer(commandPort, loom);
+		commandServer.run();
 		// socket blocks while listening for loom commands
 		loom.shutdown();
 		System.exit(0);

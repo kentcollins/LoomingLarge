@@ -71,6 +71,7 @@ public class RPiLoom implements Loom {
 
 	@Override
 	public void startup() {
+		System.out.println("In Loom.startup() preparing to publish");
 		status.publish(Status.CONTROL_EVENT, "Loom has performed startup");
 	}
 

@@ -11,26 +11,28 @@ import java.net.MulticastSocket;
  * @author kentcollins
  *
  */
-public class StatusServer extends Thread {
+public class StatusServer implements Runnable {
 
 	protected MulticastSocket socket = null;
 	protected boolean inService = true;
 	private InetAddress group;
+	private int port;
 
-	public StatusServer(String name, String address, int port) throws IOException {
-		super(name);
+	public StatusServer(String address, int port) throws IOException {
 		group = InetAddress.getByName(address);
 		socket = new MulticastSocket(port);
+		this.port = port;
 
 	}
 	
 	public void run() {
+		System.out.println("Status server is up");
 		while (inService) {}
 		socket.close();
 	}
 
 	public void send(byte[] msg) {
-		DatagramPacket p = new DatagramPacket(msg, msg.length, group, socket.getPort());
+		DatagramPacket p = new DatagramPacket(msg, msg.length, group, port);
 		try {
 			socket.send(p);
 		} catch (IOException e) {
