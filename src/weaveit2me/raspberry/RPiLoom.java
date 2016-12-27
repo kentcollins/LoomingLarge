@@ -20,18 +20,18 @@ import weaveit2me.core.LoomStatus;
  * @author kentcollins
  *
  */
-public class RPiLoomController implements Loom {
+public class RPiLoom implements Loom {
 
-	private static RPiLoomController currentInstance = null;
+	private static RPiLoom currentInstance = null;
 
-	private static int MAX_SHAFTS; // informs shift register ops
+	private int numShafts = 8; // informs shift register ops
 	private static SortedSet<Integer> currentShaftPicks; // latest data
 	private static final SortedSet<Integer> SELECT_NO_SHAFTS = new TreeSet<Integer>();
-	private LoomStatus status;
+	private LoomStatus status = new LoomStatus();
 
 	private static final GpioController gpio = GpioFactory.getInstance();
 	private static final Logger LOGGER = Logger
-			.getLogger(RPiLoomController.class.getName());
+			.getLogger(RPiLoom.class.getName());
 
 	private GpioPinDigitalOutput ssrData; // serial data
 	private GpioPinDigitalOutput ssrClock; // clock performs shift
@@ -42,16 +42,16 @@ public class RPiLoomController implements Loom {
 	/**
 	 * Returns a singleton controller.
 	 */
-	public static RPiLoomController getInstance() {
+	public static RPiLoom getInstance() {
 		if (currentInstance == null)
-			currentInstance = new RPiLoomController();
+			currentInstance = new RPiLoom();
 		return currentInstance;
 	}
 
 	/**
 	 * Constructor using default pin assignments.
 	 */
-	private RPiLoomController() {
+	private RPiLoom() {
 		ssrData = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_00,
 				PinState.LOW);
 		ssrData.setShutdownOptions(true, PinState.LOW);
@@ -71,17 +71,7 @@ public class RPiLoomController implements Loom {
 
 	@Override
 	public void startup() {
-//		try {
-			MAX_SHAFTS = 8; // default; may be modified
-			status = new LoomStatus();
-//			statusServer = new StatusServer("RaspberryPi Status Server", status);
-//			statusServer.start();
-//			statusServer.sendAndLog(LoomStatus.CONTROL_EVENT,
-//					"Successfully completed startup.");
-//
-//		} catch (IOException ex) {
-//			logFault(ex);
-//		}
+		// TODO log a message
 	}
 
 	/**
@@ -97,7 +87,7 @@ public class RPiLoomController implements Loom {
 		for (int i = 0; i < shafts.length; i++) {
 			// disregard shafts we cannot operate
 			Integer proposed = shafts[i];
-			if (proposed > 0 && proposed <= MAX_SHAFTS) {
+			if (proposed > 0 && proposed <= numShafts) {
 				picks.add(proposed);
 			}
 		}
@@ -122,7 +112,7 @@ public class RPiLoomController implements Loom {
 		ssrStrobe.setState(PinState.LOW);
 		ssrOEnable.setState(PinState.LOW);
 		Thread.sleep(0, 500);
-		for (Integer i = 1; i <= MAX_SHAFTS; i++) {
+		for (Integer i = 1; i <= numShafts; i++) {
 			if (picks.contains(i)) {
 				ssrData.setState(PinState.HIGH);
 			} else {
@@ -186,8 +176,8 @@ public class RPiLoomController implements Loom {
 	}
 
 	@Override
-	public byte[] getStatus() {
-		return status.toByteArray();
+	public Object getStatus() {
+		return status;
 	}
 
 	@Override
@@ -230,7 +220,7 @@ public class RPiLoomController implements Loom {
 	}
 
 	public void setNumShafts(int n) {
-		MAX_SHAFTS = n;
+		numShafts = n;
 	}
 
 }

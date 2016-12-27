@@ -15,7 +15,7 @@ import weaveit2me.core.LoomStatus;
  *
  */
 
-public class LoomStatusClient extends Thread {
+public class StatusClient extends Thread {
 	
 	private static final String DEFAULT_GROUP = "225.6.7.8";
 	private static final int DEFAULT_PORT = 1884;

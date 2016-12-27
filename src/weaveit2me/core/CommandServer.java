@@ -48,9 +48,9 @@ public class CommandServer implements Runnable {
 					break;
 				} else {
 					String[] commands = inputLine.trim().split(" ");
-					LoomCommand command = null;
+					Commands command = null;
 					try {
-						command = LoomCommand.valueOf(commands[0].toUpperCase());
+						command = Commands.valueOf(commands[0].toUpperCase());
 						out.println("COMMAND_OK " + inputLine);
 						switch (command) {
 						case PICK:
