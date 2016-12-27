@@ -3,7 +3,7 @@ package weaveit2me.raspberry;
 import java.io.IOException;
 
 import weaveit2me.core.CommandServer;
-import weaveit2me.core.LoomStatus;
+import weaveit2me.core.Status;
 import weaveit2me.network.StatusServer;
 
 /**
@@ -17,8 +17,8 @@ public class RPiLoomLauncher {
 	/**
 	 * 
 	 * @param args
-	 *            - the TCP port number for commands - the UDP port for status
-	 *            broadcasts - the multicast group for broadcasts
+	 *            if present, three values: TCP port number for commands, UDP
+	 *            port and alternate multicast group for status broadcasts
 	 * @throws IOException
 	 */
 	public static void main(String[] args) throws IOException {
@@ -27,7 +27,7 @@ public class RPiLoomLauncher {
 		String multicastGroup = "225.6.7.8";
 
 		RPiLoom loom = RPiLoom.getInstance();
-		LoomStatus status = (LoomStatus) loom.getStatus();
+		Status status = (Status) loom.getStatus();
 		StatusServer statusServer = new StatusServer("Status Server",
 				multicastGroup, multicastPort);
 		statusServer.start();

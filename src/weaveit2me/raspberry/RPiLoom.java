@@ -12,7 +12,7 @@ import com.pi4j.io.gpio.PinState;
 import com.pi4j.io.gpio.RaspiPin;
 
 import weaveit2me.core.Loom;
-import weaveit2me.core.LoomStatus;
+import weaveit2me.core.Status;
 
 /**
  * Translates loom commands into electronic signals for the Raspberry Pi
@@ -27,7 +27,7 @@ public class RPiLoom implements Loom {
 	private int numShafts = 8; // informs shift register ops
 	private static SortedSet<Integer> currentShaftPicks; // latest data
 	private static final SortedSet<Integer> SELECT_NO_SHAFTS = new TreeSet<Integer>();
-	private LoomStatus status = new LoomStatus();
+	private Status status = new Status();
 
 	private static final GpioController gpio = GpioFactory.getInstance();
 	private static final Logger LOGGER = Logger
@@ -71,7 +71,7 @@ public class RPiLoom implements Loom {
 
 	@Override
 	public void startup() {
-		// TODO log a message
+		status.publish(Status.CONTROL_EVENT, "Loom has performed startup");
 	}
 
 	/**
@@ -92,6 +92,7 @@ public class RPiLoom implements Loom {
 			}
 		}
 		currentShaftPicks = picks;
+		status.publish(Status.CONTROL_EVENT, "New shaft selection");
 	}
 
 	@Override
@@ -103,6 +104,7 @@ public class RPiLoom implements Loom {
 			logFault(ex);
 		}
 		lift();
+		status.setShedStatus(Status.SHED_OPEN);
 	}
 
 	private void loadShaftDataRegister(SortedSet<Integer> picks)
@@ -134,12 +136,13 @@ public class RPiLoom implements Loom {
 	}
 
 	private void engageSelectedShafts() throws InterruptedException {
-
+		status.setShaftStatus(Status.SHAFTS_ENGAGING);
 		servoEnable.setState(PinState.HIGH);
 		Thread.sleep(500);
 		servoEnable.setState(PinState.LOW);
 		loadShaftDataRegister(SELECT_NO_SHAFTS);
 		Thread.sleep(1000);
+		status.setShaftStatus(Status.SHAFTS_ENGAGED);
 	}
 
 	private void lift() {
@@ -149,13 +152,17 @@ public class RPiLoom implements Loom {
 
 	@Override
 	public void closeShed() {
-		// TODO Auto-generated method stub
+		status.setShedStatus(Status.SHED_CLOSING);
+		status.setShedStatus(Status.SHED_CLOSED);
 
 	}
 
 	@Override
 	public void beat() {
-		// TODO Auto-generated method stub
+		status.setBeaterStatus(Status.BEATER_ENGAGING);
+		status.setBeaterStatus(Status.BEATER_ENGAGED);
+		status.setBeaterStatus(Status.BEATER_RELEASING);
+		status.setBeaterStatus(Status.BEATER_RELEASED);
 
 	}
 
@@ -167,11 +174,12 @@ public class RPiLoom implements Loom {
 
 	@Override
 	public void wind() {
-		// TODO Auto-generated method stub
-
+		status.setWarpStatus(Status.WARP_WINDING_ON);
+		status.setWarpStatus(Status.WARP_WINDING_OFF);
 	}
 
 	public void shutdown() {
+		status.publish(Status.CONTROL_EVENT, "Loom shutting down.");
 		gpio.shutdown();
 	}
 

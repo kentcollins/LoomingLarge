@@ -25,7 +25,7 @@ import weaveit2me.network.StatusServer;
  * </pre>
  */
 
-public class LoomStatus {
+public class Status {
 
 	// structure of the ByteBuffer
 	public static final int EVENT_BYTE = 0;
@@ -101,9 +101,11 @@ public class LoomStatus {
 	private ByteBuffer loomStatus;
 	private StatusServer server;
 	private static final Logger LOGGER = Logger
-			.getLogger(LoomStatus.class.getName());
+			.getLogger(Status.class.getName());
+	private boolean logging = true;
+	private boolean multicast = true;
 
-	public LoomStatus() {
+	public Status() {
 		loomStatus = ByteBuffer.allocate(TOTAL_BYTES);
 	}
 
@@ -125,6 +127,8 @@ public class LoomStatus {
 
 	public void setShedStatus(int shedStatus) {
 		loomStatus.put(SHED_BYTE, (byte) shedStatus);
+		publish(SHED_STATE, "Shed updated to "+shedStatus);
+		
 	}
 
 	public int getShedStatus() {
@@ -297,16 +301,11 @@ public class LoomStatus {
 	 *            notification. ~120 character limit.
 	 * @return
 	 */
-	public byte[] prepareBroadcast(int event, String msg) {
+	public void publish(int event, String msg) {
 		setEvent(event);
 		setMessage(msg);
-		return loomStatus.array();
-	}
-	
-	public void log(int event, String msg) {
-		byte[] body = prepareBroadcast(event, msg);
-		LOGGER.log(Level.INFO, msg);
-		if (server!= null) server.send(body);
+		if (logging) LOGGER.log(Level.INFO, msg);
+		if (multicast && server!= null) server.send(loomStatus.array());
 	}
 
 	public String toString() {

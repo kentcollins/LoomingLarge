@@ -5,7 +5,7 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 
-import weaveit2me.core.LoomStatus;
+import weaveit2me.core.Status;
 
 /***
  * Listens for loom status broadcasts. On OSx may need to enable multicasting
@@ -31,10 +31,10 @@ public class StatusClient extends Thread {
 			DatagramPacket packet;
 
 			while (true) {
-				byte[] buf = new byte[LoomStatus.TOTAL_BYTES];
+				byte[] buf = new byte[Status.TOTAL_BYTES];
 				packet = new DatagramPacket(buf, buf.length);
 				socket.receive(packet);
-				System.out.println(LoomStatus.toString(packet.getData()));
+				System.out.println(Status.toString(packet.getData()));
 			}
 		}
 	}
