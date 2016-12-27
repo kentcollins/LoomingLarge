@@ -3,6 +3,8 @@ package weaveit2me.raspberry;
 import java.io.IOException;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
@@ -15,8 +17,7 @@ import weaveit2me.core.LoomStatus;
 import weaveit2me.network.LoomStatusServer;
 
 /**
- * Translates loom commands into electronic signals for the Raspberry
- * Pi
+ * Translates loom commands into electronic signals for the Raspberry Pi
  * 
  * @author kentcollins
  *
@@ -24,13 +25,15 @@ import weaveit2me.network.LoomStatusServer;
 public class RPiLoomController implements LoomController {
 
 	private static RPiLoomController currentInstance = null;
+
 	private static int MAX_SHAFTS; // informs shift register ops
-	private static SortedSet<Integer> currentShaftPicks; // latest
-															// data
+	private static SortedSet<Integer> currentShaftPicks; // latest data
 	private static final SortedSet<Integer> SELECT_NO_SHAFTS = new TreeSet<Integer>();
 	private LoomStatusServer statusServer;
 
 	private static final GpioController gpio = GpioFactory.getInstance();
+	private static final Logger LOGGER = Logger
+			.getLogger(RPiLoomController.class.getName());
 
 	private GpioPinDigitalOutput ssrData; // serial data
 	private GpioPinDigitalOutput ssrClock; // clock performs shift
@@ -39,41 +42,7 @@ public class RPiLoomController implements LoomController {
 	private GpioPinDigitalOutput servoEnable; // enables HC153s
 
 	/**
-	 * Singleton controller using default pin assignments.
-	 */
-	private RPiLoomController() {
-		ssrData = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_00, PinState.LOW);
-		ssrData.setShutdownOptions(true, PinState.LOW);
-		ssrClock = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_02, PinState.LOW);
-		ssrClock.setShutdownOptions(true, PinState.LOW);
-		ssrStrobe = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_01, PinState.LOW);
-		ssrStrobe.setShutdownOptions(true, PinState.LOW);
-		ssrOEnable = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_04, PinState.HIGH);
-		ssrOEnable.setShutdownOptions(true, PinState.LOW);
-		servoEnable = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_03, PinState.LOW);
-		servoEnable.setShutdownOptions(true, PinState.LOW);
-	}
-
-	@Override
-	public void startup() {
-		try {
-			MAX_SHAFTS = 8; // default; may be modified
-			LoomStatus.initialize();
-			System.out.println("Starting server");
-			statusServer = new LoomStatusServer();
-			System.out.println("Running Thread");
-			statusServer.start();
-			System.out.println("Broadcasting: ");
-			statusServer.send("System Status OK".getBytes());
-
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	/**
-	 * Returns the active controller.
+	 * Returns a singleton controller.
 	 */
 	public static RPiLoomController getInstance() {
 		if (currentInstance == null)
@@ -82,8 +51,44 @@ public class RPiLoomController implements LoomController {
 	}
 
 	/**
-	 * Translates a desired shaft pattern into corresponding signals
-	 * for each GPIO pin.
+	 * Constructor using default pin assignments.
+	 */
+	private RPiLoomController() {
+		ssrData = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_00,
+				PinState.LOW);
+		ssrData.setShutdownOptions(true, PinState.LOW);
+		ssrClock = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_02,
+				PinState.LOW);
+		ssrClock.setShutdownOptions(true, PinState.LOW);
+		ssrStrobe = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_01,
+				PinState.LOW);
+		ssrStrobe.setShutdownOptions(true, PinState.LOW);
+		ssrOEnable = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_04,
+				PinState.HIGH);
+		ssrOEnable.setShutdownOptions(true, PinState.LOW);
+		servoEnable = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_03,
+				PinState.LOW);
+		servoEnable.setShutdownOptions(true, PinState.LOW);
+	}
+
+	@Override
+	public void startup() {
+		try {
+			MAX_SHAFTS = 8; // default; may be modified
+			LoomStatus.initialize();
+			statusServer = new LoomStatusServer();
+			statusServer.start();
+			statusServer.sendAndLog(LoomStatus.CONTROL_EVENT,
+					"Successfully completed startup.");
+
+		} catch (IOException ex) {
+			logFault(ex);
+		}
+	}
+
+	/**
+	 * Translates a desired shaft pattern into corresponding signals for each
+	 * GPIO pin.
 	 * 
 	 * @param String
 	 *            a space delimited sequence of integers
@@ -99,6 +104,8 @@ public class RPiLoomController implements LoomController {
 			}
 		}
 		currentShaftPicks = picks;
+		statusServer.sendAndLog(LoomStatus.SHAFT_STATE,
+				"Shaft selections made");
 	}
 
 	@Override
@@ -106,14 +113,15 @@ public class RPiLoomController implements LoomController {
 		try {
 			loadShaftDataRegister();
 			engageSelectedShafts();
-		} catch (InterruptedException e) {
-			// TODO Something went wrong while loading data
-			e.printStackTrace();
+		} catch (InterruptedException ex) {
+			logFault(ex);
 		}
 		lift();
+		statusServer.sendAndLog(LoomStatus.SHED_STATE, "Shed is open");
 	}
 
-	private void loadShaftDataRegister(SortedSet<Integer> picks) throws InterruptedException {
+	private void loadShaftDataRegister(SortedSet<Integer> picks)
+			throws InterruptedException {
 		ssrData.setState(PinState.LOW);
 		ssrClock.setState(PinState.LOW);
 		ssrStrobe.setState(PinState.LOW);
@@ -147,6 +155,8 @@ public class RPiLoomController implements LoomController {
 		servoEnable.setState(PinState.LOW);
 		loadShaftDataRegister(SELECT_NO_SHAFTS);
 		Thread.sleep(1000);
+		statusServer.sendAndLog(LoomStatus.SHAFT_STATE, "Shafts engaged");
+
 	}
 
 	private void lift() {
@@ -184,16 +194,19 @@ public class RPiLoomController implements LoomController {
 
 	@Override
 	public byte[] getStatus() {
-		byte[] response = "The RPi Loom Controller is alive.".getBytes();
-		return response;
+		return LoomStatus.toByteArray();
 	}
 
 	@Override
 	public void custom(String s) {
 		System.out.println("Received custom command " + s);
 		String[] commands = s.split(" ");
-		String arg1 = commands.length > 0 ? commands[0].trim().toUpperCase() : "ARG1";
-		String arg2 = commands.length > 1 ? commands[1].trim().toUpperCase() : "ARG2";
+		String arg1 = commands.length > 0
+				? commands[0].trim().toUpperCase()
+				: "ARG1";
+		String arg2 = commands.length > 1
+				? commands[1].trim().toUpperCase()
+				: "ARG2";
 		GpioPinDigitalOutput chosen = null;
 		PinState state = null;
 		if (arg1.equals("STROBE")) {
@@ -218,7 +231,11 @@ public class RPiLoomController implements LoomController {
 		}
 
 	}
-	
+
+	private void logFault(Exception ex) {
+		LOGGER.log(Level.SEVERE, ex.toString(), ex);
+	}
+
 	public void setNumShafts(int n) {
 		MAX_SHAFTS = n;
 	}

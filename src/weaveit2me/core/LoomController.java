@@ -43,9 +43,9 @@ public interface LoomController {
 	
 	/**
 	 * Retrieve status information
-	 * @return
+	 * @return an object containing status information
 	 */
-	byte[] getStatus();
+	Object getStatus();
 	
 	/**
 	 * Handle custom commands

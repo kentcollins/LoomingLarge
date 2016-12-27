@@ -80,14 +80,14 @@ public class LoomStatus {
 	public static final int FAULT_CONTROLS = 32;
 	public static final int FAULT_UNDEFINED = 64;
 	// broadcast event indicates why transmission is being sent
-	public static final int SHED_STATE = 1; 
-	public static final int SHED_TRANSITION= 2; 
-	public static final int SHAFT_STATE = 3; 
-	public static final int SHAFT_TRANSITION = 4; 
+	public static final int SHED_STATE = 1;
+	public static final int SHED_TRANSITION = 2;
+	public static final int SHAFT_STATE = 3;
+	public static final int SHAFT_TRANSITION = 4;
 	public static final int WARP_STATE = 5;
-	public static final int WARP_TRANSITION = 6; 
+	public static final int WARP_TRANSITION = 6;
 	public static final int WEFT_STATE = 7;
-	public static final int WEFT_TRANSITION = 8; 
+	public static final int WEFT_TRANSITION = 8;
 	public static final int BEATER_STATE = 9;
 	public static final int BEATER_TRANSITION = 10;
 	public static final int FAULT_RECEIVED = 11;
@@ -173,8 +173,8 @@ public class LoomStatus {
 		setControlStatus(flags);
 	}
 
-	private static boolean checkFlag(int flag) {
-		byte flags = loomStatus.get(CONTROL_BYTE);
+	private static boolean checkFlag(byte[] data, int flag) {
+		byte flags = (byte) getControlStatus(data);
 		return (flags & flag) == flag;
 	}
 
@@ -217,8 +217,9 @@ public class LoomStatus {
 
 	public static String getMessage(byte[] packet) {
 		StringBuffer sb = new StringBuffer();
-		for (int i = MESSAGE_START; i < loomStatus.capacity(); i += 2) {
-			sb.append(loomStatus.getChar(i));
+		ByteBuffer bb = ByteBuffer.wrap(packet);
+		for (int i = MESSAGE_START; i < bb.capacity(); i += 2) {
+			sb.append(bb.getChar(i));
 		}
 		return sb.toString();
 	}
@@ -241,7 +242,7 @@ public class LoomStatus {
 	 *            notification. ~120 character limit.
 	 * @return
 	 */
-	public static byte[] prepareBroadcastPacket(int event, String msg) {
+	public static byte[] prepareBroadcast(int event, String msg) {
 		setEvent(event);
 		setMessage(msg);
 		return loomStatus.array();
@@ -255,32 +256,35 @@ public class LoomStatus {
 		sb.append("Warp: " + getWarpStatus(status) + "\t");
 		sb.append("Weft: " + getWeftStatus(status) + "\t");
 		sb.append("Beater: " + getBeaterStatus(status) + "\n");
-		sb.append("Liftplan: " + (checkFlag(1) ? "no plan" : "loaded") + "\t");
-		sb.append("Dir: " + (checkFlag(2) ? "reverse" : "forward") + "\t");
-		sb.append("Loop: " + (checkFlag(4) ? true : false) + "\t");
-		sb.append("Treadle: " + (checkFlag(8) ? "pressed" : "released") + "\n");
+		sb.append("Liftplan: " + (checkFlag(status, 1) ? "no plan" : "loaded")
+				+ "\t");
+		sb.append("Dir: " + (checkFlag(status, 2) ? "reverse" : "forward")
+				+ "\t");
+		sb.append("Loop: " + (checkFlag(status, 4) ? true : false) + "\t");
+		sb.append("Treadle: " + (checkFlag(status, 8) ? "pressed" : "released")
+				+ "\n");
 		sb.append("Current lift/step: " + getCurrentLift(status) + "\n");
 		sb.append("Message: " + getMessage(status));
 		return sb.toString();
 	}
 
-//	public static void main(String[] args) { // Test the class
-//		LoomStatus.initialize();
-//		LoomStatus.setEvent(SHED_TRANSITION);
-//		LoomStatus.setShedStatus(SHED_CLOSED);
-//		LoomStatus.setShaftStatus(SHAFTS_DISENGAGED);
-//		LoomStatus.setWarpStatus(WARP_NO_STATUS);
-//		LoomStatus.setWeftStatus(WEFT_NO_STATUS);
-//		LoomStatus.setBeaterStatus(BEATER_NO_STATUS);
-//		LoomStatus.setControlFlag(PLAN_FLAG);
-//		LoomStatus.setControlFlag(LOOPING_FLAG);
-//		LoomStatus.setFaultStatus(FAULT_NONE);
-//		LoomStatus.setCurrentLift(52);
-//		System.out.println(LoomStatus.toString(LoomStatus.toByteArray()));
-//		LoomStatus.clearControlFlag(LOOPING_FLAG);
-//		System.out.println(LoomStatus
-//				.toString(LoomStatus.prepareBroadcastPacket(0, "Test2")));
-//
-//	}
+	// public static void main(String[] args) { // Test the class
+	// LoomStatus.initialize();
+	// LoomStatus.setEvent(SHED_TRANSITION);
+	// LoomStatus.setShedStatus(SHED_CLOSED);
+	// LoomStatus.setShaftStatus(SHAFTS_DISENGAGED);
+	// LoomStatus.setWarpStatus(WARP_NO_STATUS);
+	// LoomStatus.setWeftStatus(WEFT_NO_STATUS);
+	// LoomStatus.setBeaterStatus(BEATER_NO_STATUS);
+	// LoomStatus.setControlFlag(PLAN_FLAG);
+	// LoomStatus.setControlFlag(LOOPING_FLAG);
+	// LoomStatus.setFaultStatus(FAULT_NONE);
+	// LoomStatus.setCurrentLift(52);
+	// System.out.println(LoomStatus.toString(LoomStatus.toByteArray()));
+	// LoomStatus.clearControlFlag(LOOPING_FLAG);
+	// System.out.println(LoomStatus
+	// .toString(LoomStatus.prepareBroadcastPacket(0, "Test2")));
+	//
+	// }
 
 }
