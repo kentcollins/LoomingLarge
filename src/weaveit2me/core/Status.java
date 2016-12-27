@@ -345,6 +345,34 @@ public class Status {
 		return sb.toString();
 	}
 
+	/**
+	 * @return is logging enabled
+	 */
+	public boolean isLogging() {
+		return logging;
+	}
+
+	/**
+	 * @param set logging enabled
+	 */
+	public void setLogging(boolean logging) {
+		this.logging = logging;
+	}
+
+	/**
+	 * @return multicasting is enabled
+	 */
+	public boolean isMulticast() {
+		return multicast;
+	}
+
+	/**
+	 * @param set whether multicasting is enabled
+	 */
+	public void setMulticast(boolean multicast) {
+		this.multicast = multicast;
+	}
+
 //	public static void main(String[] args) { // Test the class
 //		Status s = new Status();
 //		s.setEvent(SHED_TRANSITION);
