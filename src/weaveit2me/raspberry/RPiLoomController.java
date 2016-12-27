@@ -1,6 +1,5 @@
 package weaveit2me.raspberry;
 
-import java.io.IOException;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Level;
@@ -12,9 +11,8 @@ import com.pi4j.io.gpio.GpioPinDigitalOutput;
 import com.pi4j.io.gpio.PinState;
 import com.pi4j.io.gpio.RaspiPin;
 
-import weaveit2me.core.LoomController;
+import weaveit2me.core.Loom;
 import weaveit2me.core.LoomStatus;
-import weaveit2me.network.LoomStatusServer;
 
 /**
  * Translates loom commands into electronic signals for the Raspberry Pi
@@ -22,14 +20,14 @@ import weaveit2me.network.LoomStatusServer;
  * @author kentcollins
  *
  */
-public class RPiLoomController implements LoomController {
+public class RPiLoomController implements Loom {
 
 	private static RPiLoomController currentInstance = null;
 
 	private static int MAX_SHAFTS; // informs shift register ops
 	private static SortedSet<Integer> currentShaftPicks; // latest data
 	private static final SortedSet<Integer> SELECT_NO_SHAFTS = new TreeSet<Integer>();
-	private LoomStatusServer statusServer;
+	private LoomStatus status;
 
 	private static final GpioController gpio = GpioFactory.getInstance();
 	private static final Logger LOGGER = Logger
@@ -73,17 +71,17 @@ public class RPiLoomController implements LoomController {
 
 	@Override
 	public void startup() {
-		try {
+//		try {
 			MAX_SHAFTS = 8; // default; may be modified
-			LoomStatus.initialize();
-			statusServer = new LoomStatusServer();
-			statusServer.start();
-			statusServer.sendAndLog(LoomStatus.CONTROL_EVENT,
-					"Successfully completed startup.");
-
-		} catch (IOException ex) {
-			logFault(ex);
-		}
+			status = new LoomStatus();
+//			statusServer = new StatusServer("RaspberryPi Status Server", status);
+//			statusServer.start();
+//			statusServer.sendAndLog(LoomStatus.CONTROL_EVENT,
+//					"Successfully completed startup.");
+//
+//		} catch (IOException ex) {
+//			logFault(ex);
+//		}
 	}
 
 	/**
@@ -104,8 +102,6 @@ public class RPiLoomController implements LoomController {
 			}
 		}
 		currentShaftPicks = picks;
-		statusServer.sendAndLog(LoomStatus.SHAFT_STATE,
-				"Shaft selections made");
 	}
 
 	@Override
@@ -117,7 +113,6 @@ public class RPiLoomController implements LoomController {
 			logFault(ex);
 		}
 		lift();
-		statusServer.sendAndLog(LoomStatus.SHED_STATE, "Shed is open");
 	}
 
 	private void loadShaftDataRegister(SortedSet<Integer> picks)
@@ -155,8 +150,6 @@ public class RPiLoomController implements LoomController {
 		servoEnable.setState(PinState.LOW);
 		loadShaftDataRegister(SELECT_NO_SHAFTS);
 		Thread.sleep(1000);
-		statusServer.sendAndLog(LoomStatus.SHAFT_STATE, "Shafts engaged");
-
 	}
 
 	private void lift() {
@@ -194,7 +187,7 @@ public class RPiLoomController implements LoomController {
 
 	@Override
 	public byte[] getStatus() {
-		return LoomStatus.toByteArray();
+		return status.toByteArray();
 	}
 
 	@Override

@@ -1,6 +1,10 @@
 package weaveit2me.core;
 
 import java.nio.ByteBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import weaveit2me.network.StatusServer;
 
 /***
  * Packs loom status into a byte[] for incorporation into a datagram packet.
@@ -94,100 +98,143 @@ public class LoomStatus {
 	public static final int FAULT_CLEARED = 12;
 	public static final int CONTROL_EVENT = 13;
 
-	private static ByteBuffer loomStatus;
+	private ByteBuffer loomStatus;
+	private StatusServer server;
+	private static final Logger LOGGER = Logger
+			.getLogger(LoomStatus.class.getName());
 
-	private LoomStatus() {
-	}
-
-	public static void initialize() {
+	public LoomStatus() {
 		loomStatus = ByteBuffer.allocate(TOTAL_BYTES);
 	}
 
-	public static void setEvent(int event) {
+	public void registerServer(StatusServer server) {
+		this.server = server;
+	}
+
+	public void setEvent(int event) {
 		loomStatus.put(EVENT_BYTE, (byte) event);
+	}
+
+	public int getEvent() {
+		return loomStatus.get(EVENT_BYTE);
 	}
 
 	public static int getEvent(byte[] status) {
 		return status[EVENT_BYTE];
 	}
 
-	public static void setShedStatus(int shedStatus) {
+	public void setShedStatus(int shedStatus) {
 		loomStatus.put(SHED_BYTE, (byte) shedStatus);
+	}
+
+	public int getShedStatus() {
+		return loomStatus.get(SHED_BYTE);
 	}
 
 	public static int getShedStatus(byte[] status) {
 		return status[SHED_BYTE];
 	}
 
-	public static void setShaftStatus(int shaftStatus) {
+	public void setShaftStatus(int shaftStatus) {
 		loomStatus.put(SHAFT_BYTE, (byte) shaftStatus);
 	}
 
+	public int getShaftStatus() {
+		return loomStatus.get(SHAFT_BYTE);
+	}
 	public static int getShaftStatus(byte[] status) {
 		return status[SHAFT_BYTE];
 	}
 
-	public static void setWarpStatus(int warpStatus) {
+	public void setWarpStatus(int warpStatus) {
 		loomStatus.put(WARP_BYTE, (byte) warpStatus);
+	}
+
+	public int getWarpStatus() {
+		return loomStatus.get(WARP_BYTE);
 	}
 
 	public static int getWarpStatus(byte[] status) {
 		return status[WARP_BYTE];
 	}
 
-	public static void setWeftStatus(int weftStatus) {
+	public void setWeftStatus(int weftStatus) {
 		loomStatus.put(WEFT_BYTE, (byte) weftStatus);
+	}
+
+	public int getWeftStatus() {
+		return loomStatus.get(WEFT_BYTE);
 	}
 
 	public static int getWeftStatus(byte[] status) {
 		return status[WEFT_BYTE];
 	}
 
-	public static void setBeaterStatus(int beaterStatus) {
+	public void setBeaterStatus(int beaterStatus) {
 		loomStatus.put(BEATER_BYTE, (byte) beaterStatus);
 	}
 
+	public int getBeaterStatus() {
+		return loomStatus.get(BEATER_BYTE);
+	}
 	public static int getBeaterStatus(byte[] status) {
 		return status[BEATER_BYTE];
 	}
 
-	public static void setControlStatus(int controlStatus) {
+	public void setControlStatus(int controlStatus) {
 		loomStatus.put(CONTROL_BYTE, (byte) controlStatus);
+	}
+
+	public int getControlStatus() {
+		return loomStatus.get(CONTROL_BYTE);
 	}
 
 	public static int getControlStatus(byte[] status) {
 		return status[CONTROL_BYTE];
 	}
 
-	public static void setControlFlag(int flag) {
+	public void setControlFlag(int flag) {
 		byte flags = loomStatus.get(CONTROL_BYTE);
 		if ((flags & flag) == 0)
 			flags += flag;
-		setControlStatus(flags);
+		loomStatus.put(CONTROL_BYTE, flags);
 	}
 
-	public static void clearControlFlag(int flag) {
+	public void clearControlFlag(int flag) {
 		byte flags = loomStatus.get(CONTROL_BYTE);
 		if ((flags & flag) == flag)
 			flags -= flag;
-		setControlStatus(flags);
+		loomStatus.put(CONTROL_BYTE, flags);
 	}
 
-	private static boolean checkFlag(byte[] data, int flag) {
+	public boolean checkFlag(int flag) {
+		byte flags = (byte) loomStatus.get(CONTROL_BYTE);
+		return (flags & flag) == flag;
+	}
+
+	public static boolean checkFlag(byte[] data, int flag) {
 		byte flags = (byte) getControlStatus(data);
 		return (flags & flag) == flag;
 	}
 
-	public static void setFaultStatus(int faultStatus) {
+	public void setFaultStatus(int faultStatus) {
 		loomStatus.put(FAULT_BYTE, (byte) faultStatus);
+	}
+
+	public int getFaultStatus() {
+		return loomStatus.get(FAULT_BYTE);
 	}
 
 	public static int getFaultStatus(byte[] status) {
 		return status[FAULT_BYTE];
 	}
 
-	public static void setCurrentLift(int currentLift) {
+	public void setCurrentLift(int currentLift) {
 		loomStatus.putInt(LIFT_BYTE, currentLift);
+	}
+
+	public int getCurrentLift() {
+		return loomStatus.getInt(LIFT_BYTE);
 	}
 
 	public static int getCurrentLift(byte[] status) {
@@ -195,7 +242,7 @@ public class LoomStatus {
 		return bb.getInt(LIFT_BYTE);
 	}
 
-	public static void setMessage(String msg) {
+	public void setMessage(String msg) {
 		char[] chars = msg.toCharArray();
 		int charIndex = 0;
 		int bufIndex = MESSAGE_START;
@@ -215,6 +262,14 @@ public class LoomStatus {
 		}
 	}
 
+	public String getMessage() {
+		StringBuffer sb = new StringBuffer();
+		for (int i = MESSAGE_START; i < loomStatus.capacity(); i += 2) {
+			sb.append(loomStatus.getChar(i));
+		}
+		return sb.toString();
+	}
+
 	public static String getMessage(byte[] packet) {
 		StringBuffer sb = new StringBuffer();
 		ByteBuffer bb = ByteBuffer.wrap(packet);
@@ -228,7 +283,7 @@ public class LoomStatus {
 	 * Format the current loom information as a structured byte array
 	 * 
 	 */
-	public static byte[] toByteArray() {
+	public byte[] toByteArray() {
 		return loomStatus.array();
 	}
 
@@ -242,10 +297,20 @@ public class LoomStatus {
 	 *            notification. ~120 character limit.
 	 * @return
 	 */
-	public static byte[] prepareBroadcast(int event, String msg) {
+	public byte[] prepareBroadcast(int event, String msg) {
 		setEvent(event);
 		setMessage(msg);
 		return loomStatus.array();
+	}
+	
+	public void log(int event, String msg) {
+		byte[] body = prepareBroadcast(event, msg);
+		LOGGER.log(Level.INFO, msg);
+		if (server!= null) server.send(body);
+	}
+
+	public String toString() {
+		return toString(loomStatus.array());
 	}
 
 	public static String toString(byte[] status) {

@@ -8,7 +8,7 @@ package weaveit2me.core;
  * @author kentcollins
  *
  */
-public interface LoomController {
+public interface Loom {
 
 	/**
 	 * Select the shafts that will lifted next

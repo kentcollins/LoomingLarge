@@ -16,13 +16,16 @@ import weaveit2me.core.LoomStatus;
  */
 
 public class LoomStatusClient extends Thread {
+	
+	private static final String DEFAULT_GROUP = "225.6.7.8";
+	private static final int DEFAULT_PORT = 1884;
 
 	public static void main(String[] args) throws IOException {
 
 		try (MulticastSocket socket = new MulticastSocket(
-				LoomStatusServer.MULTICAST_PORT);) {
+				DEFAULT_PORT);) {
 			InetAddress address = InetAddress
-					.getByName(LoomStatusServer.MULTICAST_GROUP);
+					.getByName(DEFAULT_GROUP);
 			socket.joinGroup(address);
 
 			DatagramPacket packet;

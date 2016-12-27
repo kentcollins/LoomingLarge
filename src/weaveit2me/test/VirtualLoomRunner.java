@@ -1,7 +1,7 @@
 package weaveit2me.test;
 
-import weaveit2me.core.LoomController;
-import weaveit2me.core.LoomService;
+import weaveit2me.core.Loom;
+import weaveit2me.core.CommandServer;
 
 /**
  * Sets up a dummy loom controller on a network socket. Suitable for
@@ -14,7 +14,7 @@ import weaveit2me.core.LoomService;
 public class VirtualLoomRunner {
 
 	public static void main(String[] args) {
-		final LoomController loom = new LoomController() {
+		final Loom loom = new Loom() {
 
 			@Override
 			public void openShed() {
@@ -78,7 +78,7 @@ public class VirtualLoomRunner {
 			}
 		};
 
-		LoomService socket = new LoomService(1793, loom);
+		CommandServer socket = new CommandServer(1793, loom);
 		socket.run();
 		// socket blocks while listening for loom commands
 		System.exit(0);

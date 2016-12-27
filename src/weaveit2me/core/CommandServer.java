@@ -13,25 +13,26 @@ import java.util.Arrays;
  * controller.  Sits between the network and the loom hardware.
  */
 
-public class LoomService implements Runnable {
+public class CommandServer implements Runnable {
 
-	private int requestedPort;
-	private LoomController loom;
+	private Loom loom;
+	private int commandPort;
 
-	public LoomService(int requestedPort, LoomController loom) {
-		this.requestedPort = requestedPort;
+
+	public CommandServer(int commandPort, Loom loom) {
+		this.commandPort = commandPort;
 		this.loom = loom;
 	}
 
 	/**
 	 * Run as a standalone, blocking process -- myLoomServer.run();
 	 * 
-	 * Run as a nonblocking thread -- (new Thread(myLoomSocket)).run();
+	 * Run as a nonblocking thread -- (new Thread(myLoomSocket)).start();
 	 */
 	@Override
 	public void run() {
-		System.out.println("Opening loom service on port: " + requestedPort);
-		try (ServerSocket serverSocket = new ServerSocket(requestedPort);
+		System.out.println("Opening loom service on port: " + commandPort);
+		try (ServerSocket serverSocket = new ServerSocket(commandPort);
 				// next line blocks, awaiting a connection
 				Socket clientSocket = serverSocket.accept();
 				PrintWriter out = new PrintWriter(
