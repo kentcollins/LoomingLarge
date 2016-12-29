@@ -1,9 +1,8 @@
 package weaveit2me.raspberry;
 
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,6 +19,7 @@ import com.pi4j.io.gpio.event.GpioPinListenerDigital;
 
 import weaveit2me.core.Loom;
 import weaveit2me.core.PickProvider;
+import weaveit2me.core.ServiceManager;
 import weaveit2me.core.Status;
 
 /**
@@ -31,11 +31,14 @@ import weaveit2me.core.Status;
 public class RPiLoom implements Loom {
 
 	private static RPiLoom currentInstance = null;
+	private ServiceManager mgr = null;
+	private PrintWriter out = null;
 
-	private int numShafts = 8; // informs shift register ops
+	private int numShafts = 8; // affects shift register operations
 	private static List<Integer> currentShaftPicks; // latest data
 	private static final List<Integer> SELECT_NO_SHAFTS = Arrays.asList(new Integer[] {0});
 	private Status status = new Status();
+	private PickProvider pickProvider;
 
 	private static final GpioController gpio = GpioFactory.getInstance();
 	private static final Logger LOGGER = Logger
@@ -46,11 +49,7 @@ public class RPiLoom implements Loom {
 	private GpioPinDigitalOutput ssrStrobe; // latches (stores) data
 	private GpioPinDigitalOutput ssrOEnable; // makes data available
 	private GpioPinDigitalOutput servoEnable; // enables HC153s
-
-	private GpioPinDigitalInput directionSwitch; // fwd or rev
 	private GpioPinDigitalInput treadleSwitch; // pressed or released
-
-	private PickProvider pickProvider;
 
 	/**
 	 * Returns a singleton controller.
@@ -87,7 +86,7 @@ public class RPiLoom implements Loom {
 			@Override
 			public void handleGpioPinDigitalStateChangeEvent(
 					GpioPinDigitalStateChangeEvent event) {
-				status.publish(Status.CONTROL_EVENT, "Treadle press received");
+				out.println("Treadle pressed");
 				if (event.getEdge().equals(PinEdge.RISING)) {
 					pickShafts();
 				}
@@ -98,7 +97,7 @@ public class RPiLoom implements Loom {
 
 	@Override
 	public void startup() {
-		status.publish(Status.CONTROL_EVENT, "Loom has performed startup");
+		out.println("Loom startup complete");
 	}
 
 	/**
@@ -252,6 +251,18 @@ public class RPiLoom implements Loom {
 	public void setPickProvider(PickProvider picker) {
 		this.pickProvider = picker;
 
+	}
+
+	public void setResponseSocket(PrintWriter out) {
+		this.out  = out;
+	}
+
+	public ServiceManager getServiceManager() {
+		return mgr;
+	}
+
+	public void setServiceManager(ServiceManager mgr) {
+		this.mgr = mgr;
 	}
 
 }

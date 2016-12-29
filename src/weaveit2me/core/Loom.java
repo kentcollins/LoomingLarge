@@ -1,5 +1,7 @@
 package weaveit2me.core;
 
+import java.io.PrintWriter;
+
 /**
  * Handle weaving process steps.  Implementing classes are expected to configure
  * the weaving hardware and translate these broad steps into specific electronic
