@@ -14,7 +14,7 @@ public interface Loom {
 	 * Select the shafts that will lifted next
 	 * @param selectedShafts
 	 */
-	void pickShafts(Integer[] selectedShafts);
+	void pickShafts();
 
 	/**
 	 * Open the shed, lifting the selected shafts

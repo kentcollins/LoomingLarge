@@ -3,6 +3,7 @@ package weaveit2me.raspberry;
 import java.io.IOException;
 
 import weaveit2me.core.CommandServer;
+import weaveit2me.core.PickProvider;
 import weaveit2me.core.Status;
 import weaveit2me.network.StatusServer;
 
@@ -26,6 +27,8 @@ public class RPiLoomLauncher {
 		int multicastPort = 1884;
 		String multicastGroup = "225.6.7.8";
 		RPiLoom loom = RPiLoom.getInstance();
+		PickProvider picker = new PickProvider();
+		loom.setPickProvider(picker);
 		Status status = (Status) loom.getStatus();
 		StatusServer statusServer = new StatusServer(multicastGroup,multicastPort);
 		status.registerServer(statusServer);

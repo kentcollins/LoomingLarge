@@ -52,15 +52,6 @@ public class VirtualLoomRunner {
 			}
 
 			@Override
-			public void pickShafts(Integer[] selectedShafts) {
-				System.out.println("Virtual Loom received command to pick shafts\n\t");
-				for (Integer i : selectedShafts) {
-					System.out.print(i+" ");
-				}
-				System.out.println();
-			}
-
-			@Override
 			public void custom(String s) {
 				System.out.println("Virtual Loom received custom command: \n\t"+s);
 			}
@@ -75,6 +66,12 @@ public class VirtualLoomRunner {
 			public void shutdown() {
 				System.out.println("Virtual Loom received command to shutdown");
 
+			}
+
+			@Override
+			public void pickShafts() {
+				System.out.println("Virtual Loom received command to pick shafts");
+				
 			}
 		};
 

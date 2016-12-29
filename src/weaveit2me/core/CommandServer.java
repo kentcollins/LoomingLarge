@@ -54,22 +54,7 @@ public class CommandServer implements Runnable {
 						out.println("COMMAND_OK " + inputLine);
 						switch (command) {
 						case PICK:
-							if (commands.length > 1) {
-								try {
-									int shafts = commands.length-1;
-									Integer[] picks = new Integer[shafts];
-									for (int i = 0; i<commands.length-1; i++) {
-										picks[i] = Integer.parseInt(commands[i+1]);
-									}
-									loom.pickShafts(picks);
-								} catch (NumberFormatException e) {
-									out.println("INVALID_ARGUMENT "
-											+ Arrays.asList(commands));
-									break;
-								}
-							} else {
-								loom.pickShafts(new Integer[] {0});
-							}
+							loom.pickShafts();
 							break;
 						case OPEN:
 							loom.openShed();

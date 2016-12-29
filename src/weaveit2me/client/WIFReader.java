@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Scanner;
 
 public class WIFReader {
+	
 	public static Map<String, HashMap<String, String>> parseFile(String fileName) {
 		Map<String, HashMap<String, String>> info = new HashMap<String, HashMap<String, String>>();
 		String section = null;

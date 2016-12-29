@@ -23,6 +23,10 @@ import weaveit2me.network.StatusServer;
  * 	8	 	current liftplan step number (4 bytes)
  * 	12	 	free form information (remaining bytes)
  * </pre>
+ * 
+ * When the status of a major component (shed, shaft, warp, weft, or beater) is
+ * changed, this class will implicitly publish the change. For controls state
+ * changes, the class initiating the change should explicitly publish the change.
  */
 
 public class Status {
@@ -53,10 +57,9 @@ public class Status {
 	public static final int SHAFTS_DISENGAGING = 4;
 	// information about the warp
 	public static final int WARP_NO_STATUS = 0;
-	public static final int WARP_WIND_FORWARD = 1;
-	public static final int WARP_WIND_REVERSE = 2;
-	public static final int WARP_WINDING_ON = 3;
-	public static final int WARP_WINDING_OFF = 4;
+	public static final int WARP_NOT_WINDING = 1;
+	public static final int WARP_WINDING_FORWARD = 2;
+	public static final int WARP_WINDING_REVERSE = 3;
 	// information about the weft
 	public static final int WEFT_NO_STATUS = 0;
 	public static final int WEFT_MOVING_RIGHT = 1;
@@ -70,19 +73,19 @@ public class Status {
 	public static final int BEATER_ENGAGED = 3;
 	public static final int BEATER_RELEASING = 4;
 	// flags for control switches
-	public static final int PLAN_FLAG = 1;
-	public static final int DIRECTION_FLAG = 2;
-	public static final int LOOPING_FLAG = 4;
-	public static final int TREADLE_FLAG = 8;
+	public static final int PLAN_FLAG = 1; // clear = not loaded
+	public static final int DIRECTION_FLAG = 2; // clear = fwd
+	public static final int LOOPING_FLAG = 4; // clear = no_loop
+	public static final int TREADLE_FLAG = 8; // No need - momentary
 	// errors and faults
 	public static final int FAULT_NONE = 0;
 	public static final int FAULT_SHED = 1;
 	public static final int FAULT_SHAFTS = 2;
-	public static final int FAULT_WARP = 4;
-	public static final int FAULT_WEFT = 8;
-	public static final int FAULT_BEATER = 16;
-	public static final int FAULT_CONTROLS = 32;
-	public static final int FAULT_UNDEFINED = 64;
+	public static final int FAULT_WARP = 3;
+	public static final int FAULT_WEFT = 4;
+	public static final int FAULT_BEATER = 5;
+	public static final int FAULT_CONTROLS = 6;
+	public static final int FAULT_MULTIPLE = 7;
 	// broadcast event indicates why transmission is being sent
 	public static final int SHED_STATE = 1;
 	public static final int SHED_TRANSITION = 2;
@@ -97,6 +100,14 @@ public class Status {
 	public static final int FAULT_RECEIVED = 11;
 	public static final int FAULT_CLEARED = 12;
 	public static final int CONTROL_EVENT = 13;
+	
+	private static final String[] shedStrings = {"Not Set", "Closed", "Opening", "Open", "Closing"};
+	private static final String[] shaftStrings = {"Not Set", "Disengaged", "Engaging", "Engaged", "Disengaging"};
+	private static final String[] warpStrings ={"Not Set", "Not winding", "Winding Fwd", "Winding Rev"};
+	private static final String[] weftStrings = {"Not Set", "Weaving Right", "On Right", "Weaving Left", "On Left"};
+	private static final String[] beaterStrings={"Not Set", "Released", "Engaging", "Engaged", "Releasing"};
+	private static final String[] faultStrings={"None", "Shed fault", "Shaft fault", "Warp fault", "Weft fault", "Beater fault", "Control fault", "Multiple"};
+
 
 	private ByteBuffer loomStatus;
 	private StatusServer server;
@@ -119,6 +130,26 @@ public class Status {
 
 	public int getEvent() {
 		return loomStatus.get(EVENT_BYTE);
+	}
+	
+	public static String getEventString(int i) {
+		switch (i){
+			case 0: return "NO EVENT";
+			case 1: return "SHED STATE";
+			case 2: return "SHED TRANSITION";
+			case 3: return "SHAFT STATE";
+			case 4: return "SHAFT TRANSITION";
+			case 5: return "WARP STATE";
+			case 6: return "WARP TRANSITION";
+			case 7: return "WEFT STATE";
+			case 8: return "WEFT TRANSITION";
+			case 9: return "BEATER STATE";
+			case 10: return "BEATER TRANSITION";
+			case 11: return "FAULT RECEIVED";
+			case 12: return "FAULT CLEARED";
+			case 13: return "CONTROL EVENT";
+			default: return "UNDEFINED";
+		}
 	}
 
 	public static int getEvent(byte[] status) {
@@ -167,7 +198,7 @@ public class Status {
 
 	public void setWeftStatus(int weftStatus) {
 		loomStatus.put(WEFT_BYTE, (byte) weftStatus);
-		publish(WEFT_STATE, "Weft updated to "+weftStatus);
+		publish(WEFT_STATE, "Weft updated to " + weftStatus);
 	}
 
 	public int getWeftStatus() {
@@ -245,7 +276,7 @@ public class Status {
 
 	public void setCurrentLift(int currentLift) {
 		loomStatus.putInt(LIFT_BYTE, currentLift);
-		publish(CONTROL_EVENT, "Next lift changed to "+currentLift);
+		publish(CONTROL_EVENT, "Next lift changed to " + currentLift);
 	}
 
 	public int getCurrentLift() {
@@ -353,7 +384,8 @@ public class Status {
 	}
 
 	/**
-	 * @param set logging enabled
+	 * @param set
+	 *            logging enabled
 	 */
 	public void setLogging(boolean logging) {
 		this.logging = logging;
@@ -367,26 +399,27 @@ public class Status {
 	}
 
 	/**
-	 * @param set whether multicasting is enabled
+	 * @param set
+	 *            whether multicasting is enabled
 	 */
 	public void setMulticast(boolean multicast) {
 		this.multicast = multicast;
 	}
 
-//	public static void main(String[] args) { // Test the class
-//		Status s = new Status();
-//		s.setEvent(SHED_TRANSITION);
-//		s.setShedStatus(SHED_CLOSED);
-//		s.setShaftStatus(SHAFTS_DISENGAGED);
-//		s.setWarpStatus(WARP_NO_STATUS);
-//		s.setWeftStatus(WEFT_NO_STATUS);
-//		s.setBeaterStatus(BEATER_NO_STATUS);
-//		s.setControlFlag(PLAN_FLAG);
-//		s.setControlFlag(LOOPING_FLAG);
-//		s.setFaultStatus(FAULT_NONE);
-//		s.setCurrentLift(52);
-//		s.clearControlFlag(LOOPING_FLAG);
-//		System.out.println(s.toString());
-//	}
+	 public static void main(String[] args) { // Test the class
+	 Status s = new Status();
+	 s.setEvent(SHED_TRANSITION);
+	 s.setShedStatus(SHED_CLOSED);
+	 s.setShaftStatus(SHAFTS_DISENGAGED);
+	 s.setWarpStatus(WARP_NO_STATUS);
+	 s.setWeftStatus(WEFT_NO_STATUS);
+	 s.setBeaterStatus(BEATER_NO_STATUS);
+	 s.setControlFlag(PLAN_FLAG);
+	 s.setControlFlag(LOOPING_FLAG);
+	 s.setFaultStatus(FAULT_NONE);
+	 s.setCurrentLift(52);
+	 s.clearControlFlag(LOOPING_FLAG);
+	 System.out.println(s.toString());
+	 }
 
 }

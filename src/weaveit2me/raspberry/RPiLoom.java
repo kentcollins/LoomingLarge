@@ -1,5 +1,7 @@
 package weaveit2me.raspberry;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.logging.Level;
@@ -7,11 +9,17 @@ import java.util.logging.Logger;
 
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
+import com.pi4j.io.gpio.GpioPinDigitalInput;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
+import com.pi4j.io.gpio.PinEdge;
+import com.pi4j.io.gpio.PinPullResistance;
 import com.pi4j.io.gpio.PinState;
 import com.pi4j.io.gpio.RaspiPin;
+import com.pi4j.io.gpio.event.GpioPinDigitalStateChangeEvent;
+import com.pi4j.io.gpio.event.GpioPinListenerDigital;
 
 import weaveit2me.core.Loom;
+import weaveit2me.core.PickProvider;
 import weaveit2me.core.Status;
 
 /**
@@ -25,8 +33,8 @@ public class RPiLoom implements Loom {
 	private static RPiLoom currentInstance = null;
 
 	private int numShafts = 8; // informs shift register ops
-	private static SortedSet<Integer> currentShaftPicks; // latest data
-	private static final SortedSet<Integer> SELECT_NO_SHAFTS = new TreeSet<Integer>();
+	private static List<Integer> currentShaftPicks; // latest data
+	private static final List<Integer> SELECT_NO_SHAFTS = Arrays.asList(new Integer[] {0});
 	private Status status = new Status();
 
 	private static final GpioController gpio = GpioFactory.getInstance();
@@ -38,6 +46,11 @@ public class RPiLoom implements Loom {
 	private GpioPinDigitalOutput ssrStrobe; // latches (stores) data
 	private GpioPinDigitalOutput ssrOEnable; // makes data available
 	private GpioPinDigitalOutput servoEnable; // enables HC153s
+
+	private GpioPinDigitalInput directionSwitch; // fwd or rev
+	private GpioPinDigitalInput treadleSwitch; // pressed or released
+
+	private PickProvider pickProvider;
 
 	/**
 	 * Returns a singleton controller.
@@ -67,11 +80,24 @@ public class RPiLoom implements Loom {
 		servoEnable = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_03,
 				PinState.LOW);
 		servoEnable.setShutdownOptions(true, PinState.LOW);
+		treadleSwitch = gpio.provisionDigitalInputPin(RaspiPin.GPIO_11);
+		treadleSwitch.setDebounce(500);
+		treadleSwitch.setPullResistance(PinPullResistance.PULL_DOWN);
+		treadleSwitch.addListener(new GpioPinListenerDigital() {
+			@Override
+			public void handleGpioPinDigitalStateChangeEvent(
+					GpioPinDigitalStateChangeEvent event) {
+				status.publish(Status.CONTROL_EVENT, "Treadle press received");
+				if (event.getEdge().equals(PinEdge.RISING)) {
+					pickShafts();
+				}
+			}
+		});
+
 	}
 
 	@Override
 	public void startup() {
-		System.out.println("In Loom.startup() preparing to publish");
 		status.publish(Status.CONTROL_EVENT, "Loom has performed startup");
 	}
 
@@ -83,17 +109,8 @@ public class RPiLoom implements Loom {
 	 *            a space delimited sequence of integers
 	 */
 	@Override
-	public void pickShafts(Integer[] shafts) {
-		SortedSet<Integer> picks = new TreeSet<Integer>();
-		for (int i = 0; i < shafts.length; i++) {
-			// disregard shafts we cannot operate
-			Integer proposed = shafts[i];
-			if (proposed > 0 && proposed <= numShafts) {
-				picks.add(proposed);
-			}
-		}
-		currentShaftPicks = picks;
-		status.publish(Status.CONTROL_EVENT, "New shaft selection");
+	public void pickShafts() {
+		currentShaftPicks = pickProvider.getNextPick();
 	}
 
 	@Override
@@ -108,7 +125,7 @@ public class RPiLoom implements Loom {
 		status.setShedStatus(Status.SHED_OPEN);
 	}
 
-	private void loadShaftDataRegister(SortedSet<Integer> picks)
+	private void loadShaftDataRegister(List<Integer> currentShaftPicks2)
 			throws InterruptedException {
 		ssrData.setState(PinState.LOW);
 		ssrClock.setState(PinState.LOW);
@@ -116,7 +133,7 @@ public class RPiLoom implements Loom {
 		ssrOEnable.setState(PinState.LOW);
 		Thread.sleep(0, 500);
 		for (Integer i = 1; i <= numShafts; i++) {
-			if (picks.contains(i)) {
+			if (currentShaftPicks2.contains(i)) {
 				ssrData.setState(PinState.HIGH);
 			} else {
 				ssrData.setState(PinState.LOW);
@@ -175,8 +192,8 @@ public class RPiLoom implements Loom {
 
 	@Override
 	public void wind() {
-		status.setWarpStatus(Status.WARP_WINDING_ON);
-		status.setWarpStatus(Status.WARP_WINDING_OFF);
+		status.setWarpStatus(Status.WARP_WINDING_FORWARD);
+		status.setWarpStatus(Status.WARP_NOT_WINDING);
 	}
 
 	public void shutdown() {
@@ -230,6 +247,11 @@ public class RPiLoom implements Loom {
 
 	public void setNumShafts(int n) {
 		numShafts = n;
+	}
+
+	public void setPickProvider(PickProvider picker) {
+		this.pickProvider = picker;
+
 	}
 
 }
