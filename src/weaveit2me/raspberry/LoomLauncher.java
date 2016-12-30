@@ -2,6 +2,7 @@ package weaveit2me.raspberry;
 
 import java.io.IOException;
 
+import weaveit2me.client.LiftPlan;
 import weaveit2me.core.PickProvider;
 import weaveit2me.core.ServiceManager;
 
@@ -29,6 +30,8 @@ public class LoomLauncher {
 		}
 		RPiLoom loom = RPiLoom.getInstance();
 		PickProvider picker = new PickProvider();
+		LiftPlan defaultPlan = new LiftPlan();
+		picker.setPatternMap(defaultPlan.getPicks());
 		loom.setPickProvider(picker);
 		ServiceManager mgr = new ServiceManager(servicePort, loom, picker);
 		mgr.run();

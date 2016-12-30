@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import weaveit2me.client.LiftPlan;
+
 /***
  * Returns a collection of integers representing shafts to lift. Responses may
  * be pulled from either an A/B alternating selection of shaft picks, as used in
@@ -79,7 +81,7 @@ public class PickProvider {
 					if (!patternMap.containsKey(patternIndex)
 							|| patternIndex <= 0) {
 						if (loop == LOOP) {
-							patternIndex = patternMap.size() - 1;
+							patternIndex = patternMap.size();
 						} else
 							patternIndex = 0;
 					}
@@ -195,6 +197,20 @@ public class PickProvider {
 	 */
 	public void setFillMap(Map<String, List<Integer>> abMap) {
 		this.fillMap = abMap;
+	}
+	
+	public static void main(String[] args) {
+		PickProvider pp = new PickProvider();
+		LiftPlan lp = new LiftPlan();
+		pp.setPatternMap(lp.getPicks());
+		System.out.println(pp.getPatternMap());
+		pp.setPatternIndex(0);
+		pp.setPatternMode(LIFTPLAN_MODE);
+		pp.setDirection(DIR_FWD);
+		pp.setLoop(LOOP);
+		for (int i = 0; i<12; i++) {
+			System.out.println(pp.getNextPick());
+		}
 	}
 
 }
