@@ -20,7 +20,6 @@ import com.pi4j.io.gpio.event.GpioPinListenerDigital;
 import weaveit2me.core.Loom;
 import weaveit2me.core.PickProvider;
 import weaveit2me.core.ServiceManager;
-import weaveit2me.core.Status;
 
 /**
  * Translates loom commands into electronic signals for the Raspberry Pi
@@ -36,8 +35,9 @@ public class RPiLoom implements Loom {
 
 	private int numShafts = 8; // affects shift register operations
 	private static List<Integer> currentShaftPicks; // latest data
-	private static final List<Integer> SELECT_NO_SHAFTS = Arrays.asList(new Integer[] {0});
-	private Status status = new Status();
+	private static final List<Integer> SELECT_NO_SHAFTS = Arrays
+			.asList(new Integer[]{0});
+	//private Status status = new Status();
 	private PickProvider pickProvider;
 
 	private static final GpioController gpio = GpioFactory.getInstance();
@@ -97,7 +97,12 @@ public class RPiLoom implements Loom {
 
 	@Override
 	public void startup() {
-		out.println("Loom startup complete");
+		out.print("Loom startup complete");
+	}
+
+	public void shutdown() {
+		out.println("Received shutdown command");
+		gpio.shutdown();
 	}
 
 	/**
@@ -121,7 +126,7 @@ public class RPiLoom implements Loom {
 			logFault(ex);
 		}
 		lift();
-		status.setShedStatus(Status.SHED_OPEN);
+		out.println("Opened shed");
 	}
 
 	private void loadShaftDataRegister(List<Integer> currentShaftPicks2)
@@ -153,13 +158,13 @@ public class RPiLoom implements Loom {
 	}
 
 	private void engageSelectedShafts() throws InterruptedException {
-		status.setShaftStatus(Status.SHAFTS_ENGAGING);
+		out.println("Shafts engaging");
 		servoEnable.setState(PinState.HIGH);
 		Thread.sleep(500);
 		servoEnable.setState(PinState.LOW);
 		loadShaftDataRegister(SELECT_NO_SHAFTS);
 		Thread.sleep(1000);
-		status.setShaftStatus(Status.SHAFTS_ENGAGED);
+		out.println("Shafts engaged");
 	}
 
 	private void lift() {
@@ -169,40 +174,25 @@ public class RPiLoom implements Loom {
 
 	@Override
 	public void closeShed() {
-		status.setShedStatus(Status.SHED_CLOSING);
-		status.setShedStatus(Status.SHED_CLOSED);
+		out.println("Closed shed");
 
 	}
 
 	@Override
 	public void beat() {
-		status.setBeaterStatus(Status.BEATER_ENGAGING);
-		status.setBeaterStatus(Status.BEATER_ENGAGED);
-		status.setBeaterStatus(Status.BEATER_RELEASING);
-		status.setBeaterStatus(Status.BEATER_RELEASED);
+		out.println("Beat not implemented");
 
 	}
 
 	@Override
 	public void weave() {
-		// TODO Auto-generated method stub
+		out.println("Weave not implemented");
 
 	}
 
 	@Override
 	public void wind() {
-		status.setWarpStatus(Status.WARP_WINDING_FORWARD);
-		status.setWarpStatus(Status.WARP_NOT_WINDING);
-	}
-
-	public void shutdown() {
-		status.publish(Status.CONTROL_EVENT, "Loom shutting down.");
-		gpio.shutdown();
-	}
-
-	@Override
-	public Object getStatus() {
-		return status;
+		out.println("Wind not implemented");
 	}
 
 	@Override
@@ -254,7 +244,7 @@ public class RPiLoom implements Loom {
 	}
 
 	public void setResponseSocket(PrintWriter out) {
-		this.out  = out;
+		this.out = out;
 	}
 
 	public ServiceManager getServiceManager() {

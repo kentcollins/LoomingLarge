@@ -69,8 +69,7 @@ public class ServiceManager implements Runnable {
 			String inputLine;
 			while ((inputLine = in.readLine()) != null) {
 				// empty string concludes the session
-				if (inputLine.equals("")
-						|| inputLine.equalsIgnoreCase("exit")) {
+				if (inputLine.equalsIgnoreCase("exit")) {
 					out.println("COMMAND_OK EXIT");
 					break;
 				} else {
@@ -98,19 +97,19 @@ public class ServiceManager implements Runnable {
 							case WIND :
 								loom.wind();
 								break;
-							case STATUS :
-								out.println(loom.getStatus());
-								break;
 							case STARTUP :
 								loom.startup();
+								break;
 							case SHUTDOWN :
 								loom.shutdown();
+								break;
 							case CUSTOM :
 								StringBuilder sb = new StringBuilder();
 								for (int i = 1; i < commands.length; i++) {
 									sb.append(commands[i] + " ");
 								}
 								loom.custom(sb.toString());
+								break;
 							default :
 								break;
 						}

@@ -2,10 +2,8 @@ package weaveit2me.raspberry;
 
 import java.io.IOException;
 
-import weaveit2me.core.ServiceManager;
 import weaveit2me.core.PickProvider;
-import weaveit2me.core.Status;
-import weaveit2me.network.StatusServer;
+import weaveit2me.core.ServiceManager;
 
 /**
  * Main method for launching a Raspberry Pi loom. Initializes the loom and the

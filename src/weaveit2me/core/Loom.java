@@ -1,7 +1,5 @@
 package weaveit2me.core;
 
-import java.io.PrintWriter;
-
 /**
  * Handle weaving process steps.  Implementing classes are expected to configure
  * the weaving hardware and translate these broad steps into specific electronic
@@ -42,12 +40,6 @@ public interface Loom {
 	 * Wind to advance cloth
 	 */
 	void wind();
-	
-	/**
-	 * Retrieve status information
-	 * @return an object containing status information
-	 */
-	Object getStatus();
 	
 	/**
 	 * Handle custom commands
