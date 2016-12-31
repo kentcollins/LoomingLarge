@@ -34,11 +34,13 @@ public class RPiLoom implements Loom {
 	private PrintWriter out = null;
 
 	private int numShafts = 8; // affects shift register operations
-	private static List<Integer> currentShaftPicks; // latest data
+	private static List<Integer> shaftSelection; // latest data
 	private static final List<Integer> SELECT_NO_SHAFTS = Arrays
 			.asList(new Integer[]{0});
-	//private Status status = new Status();
+	// private Status status = new Status();
 	private PickProvider pickProvider;
+	private boolean autoAdvance = false;
+	private boolean shedOpen = false;
 
 	private static final GpioController gpio = GpioFactory.getInstance();
 	private static final Logger LOGGER = Logger
@@ -49,6 +51,9 @@ public class RPiLoom implements Loom {
 	private GpioPinDigitalOutput ssrStrobe; // latches (stores) data
 	private GpioPinDigitalOutput ssrOEnable; // makes data available
 	private GpioPinDigitalOutput servoEnable; // enables HC153s
+	private GpioPinDigitalOutput motorStep; // low-high transition
+	private GpioPinDigitalOutput motorDirection; // high is forward/up
+	private GpioPinDigitalOutput motorEnable; // low enables motion
 	private GpioPinDigitalInput treadleSwitch; // pressed or released
 
 	/**
@@ -79,6 +84,15 @@ public class RPiLoom implements Loom {
 		servoEnable = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_03,
 				PinState.LOW);
 		servoEnable.setShutdownOptions(true, PinState.LOW);
+		motorStep = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_05,
+				PinState.LOW);
+		motorStep.setShutdownOptions(true, PinState.LOW);
+		motorDirection = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_06,
+				PinState.LOW);
+		motorDirection.setShutdownOptions(true, PinState.LOW);
+		motorEnable = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_07,
+				PinState.LOW);
+		motorEnable.setShutdownOptions(true, PinState.LOW);
 		treadleSwitch = gpio.provisionDigitalInputPin(RaspiPin.GPIO_11);
 		treadleSwitch.setDebounce(500);
 		treadleSwitch.setPullResistance(PinPullResistance.PULL_DOWN);
@@ -86,12 +100,28 @@ public class RPiLoom implements Loom {
 			@Override
 			public void handleGpioPinDigitalStateChangeEvent(
 					GpioPinDigitalStateChangeEvent event) {
-				out.println("Treadle pressed");
 				if (event.getEdge().equals(PinEdge.RISING)) {
-					pickShafts();
+					out.println("Treadle pressed");
+					operateTreadle();
 				}
 			}
 		});
+
+	}
+
+	protected void operateTreadle() {
+		// If shed is closed, open it
+		if (!shedOpen) {
+			pickShafts();
+			openShed();
+		} else if (!autoAdvance) {
+			// simply close
+			closeShed();
+		} else {
+			// in auto -> close, engage, lift
+			closeShed();
+			operateTreadle();
+		}
 
 	}
 
@@ -106,27 +136,44 @@ public class RPiLoom implements Loom {
 	}
 
 	/**
-	 * Translates a desired shaft pattern into corresponding signals for each
-	 * GPIO pin.
-	 * 
-	 * @param String
-	 *            a space delimited sequence of integers
+	 * Calls pick provider for the next intended set of shafts.
 	 */
 	@Override
 	public void pickShafts() {
-		currentShaftPicks = pickProvider.getNextPick();
+		shaftSelection = pickProvider.getNextPick();
 	}
 
 	@Override
 	public void openShed() {
 		try {
 			loadShaftDataRegister();
-			engageSelectedShafts();
+			engageShafts();
 		} catch (InterruptedException ex) {
 			logFault(ex);
 		}
 		lift();
-		out.println("Opened shed");
+		shedOpen = true;
+		out.println("Opened shed holding shafts "+shaftSelection);
+	}
+
+	public void driveSteppers(int numSteps, int stepDelayNanos)
+			throws InterruptedException {
+		System.out.println("Stepping for " + numSteps + " steps.");
+		motorEnable.setState(PinState.LOW);
+		if (numSteps < 0)
+			motorDirection.setState(PinState.LOW);
+		else
+			motorDirection.setState(PinState.HIGH);
+		motorStep.setState(PinState.LOW);
+		numSteps = Math.abs(numSteps);
+		for (int step = 0; step < numSteps; step++) {
+			motorStep.setState(PinState.HIGH);
+			Thread.sleep(0, stepDelayNanos);
+			motorStep.setState(PinState.LOW);
+			Thread.sleep(0, stepDelayNanos);
+		}
+		System.out.println("Stepping sequence complete");
+
 	}
 
 	private void loadShaftDataRegister(List<Integer> currentShaftPicks2)
@@ -154,10 +201,10 @@ public class RPiLoom implements Loom {
 	}
 
 	private void loadShaftDataRegister() throws InterruptedException {
-		loadShaftDataRegister(currentShaftPicks);
+		loadShaftDataRegister(shaftSelection);
 	}
 
-	private void engageSelectedShafts() throws InterruptedException {
+	private void engageShafts() throws InterruptedException {
 		out.println("Shafts engaging");
 		servoEnable.setState(PinState.HIGH);
 		Thread.sleep(500);
@@ -174,6 +221,7 @@ public class RPiLoom implements Loom {
 
 	@Override
 	public void closeShed() {
+		shedOpen = false;
 		out.println("Closed shed");
 
 	}
@@ -217,6 +265,22 @@ public class RPiLoom implements Loom {
 			chosen = ssrOEnable;
 		} else if (arg1.equals("SERVO")) {
 			chosen = servoEnable;
+		} else if (arg1.equals("STEPPER")) {
+			chosen = motorStep;
+		} else if (arg1.equals("DIRECTION")) {
+			chosen = motorDirection;
+		} else if (arg1.equals("AUTO")) {
+			autoAdvance = !autoAdvance;
+			System.out.println("AutoAdvance: "+autoAdvance);
+		} else if (arg1.equals("MOTOR")) {
+			int steps = Integer.parseInt(arg2);
+			try {
+				// requires >= 1.9us delay
+				driveSteppers(steps, 2000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		if (arg2.equals("HIGH")) {
 			state = PinState.HIGH;
@@ -253,6 +317,21 @@ public class RPiLoom implements Loom {
 
 	public void setServiceManager(ServiceManager mgr) {
 		this.mgr = mgr;
+	}
+
+	/**
+	 * @return the autoAdvance
+	 */
+	public boolean isAutoAdvance() {
+		return autoAdvance;
+	}
+
+	/**
+	 * @param autoAdvance
+	 *            the autoAdvance to set
+	 */
+	public void setAutoAdvance(boolean autoAdvance) {
+		this.autoAdvance = autoAdvance;
 	}
 
 }

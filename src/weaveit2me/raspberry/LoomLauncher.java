@@ -32,6 +32,8 @@ public class LoomLauncher {
 		PickProvider picker = new PickProvider();
 		LiftPlan defaultPlan = new LiftPlan();
 		picker.setPatternMap(defaultPlan.getPicks());
+		picker.setPatternMode(PickProvider.LIFTPLAN_MODE);
+		picker.setLoop(PickProvider.LOOP);
 		loom.setPickProvider(picker);
 		ServiceManager mgr = new ServiceManager(servicePort, loom, picker);
 		mgr.run();
