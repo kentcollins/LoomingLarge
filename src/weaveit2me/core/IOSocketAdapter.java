@@ -18,6 +18,7 @@ public class IOSocketAdapter implements Runnable {
 
 	@Override
 	public void run() {
+		System.out.println("The IOSocketAdapter was started");
 		try {
 			nodeClient = IO.socket("http://192.168.0.28:3000/");
 			loomService = new java.net.Socket("192.168.0.28", 1793);
@@ -46,6 +47,7 @@ public class IOSocketAdapter implements Runnable {
 				keepRunning = false;
 			}
 		});
-		while(keepRunning) {}
+		while(keepRunning) {
+		}
 	}
 }

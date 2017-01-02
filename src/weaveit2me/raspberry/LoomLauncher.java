@@ -39,8 +39,10 @@ public class LoomLauncher {
 		loom.setPickProvider(picker);
 		ServiceManager mgr = new ServiceManager(servicePort, loom, picker);
 		IOSocketAdapter ios = new IOSocketAdapter();
-		(new Thread(ios)).start();
-		mgr.run();
+		System.out.println("Starting the socket adapter");
+		ios.run();
+		//System.out.println("Starting manager thread");
+		//mgr.run();
 		// blocks while ServiceManger handles loom commands
 		// continues when ServiceManager stops running
 		loom.shutdown();
