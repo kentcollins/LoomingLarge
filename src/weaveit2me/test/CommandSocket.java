@@ -1,11 +1,12 @@
 package weaveit2me.test;
 
 import java.net.URISyntaxException;
+
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 
-public class Port3000Tester {
+public class CommandSocket {
 
 	public static void main(String[] args) throws URISyntaxException {
 		final Socket sock = IO.socket("http://192.168.0.28:3000/");

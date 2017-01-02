@@ -19,10 +19,10 @@ import com.pi4j.io.gpio.event.GpioPinListenerDigital;
 
 import weaveit2me.core.Loom;
 import weaveit2me.core.PickProvider;
-import weaveit2me.core.ServiceManager;
 
 /**
- * Translates loom commands into electronic signals for the Raspberry Pi
+ * Translates loom commands into electronic signals for the Raspberry
+ * Pi
  * 
  * @author kentcollins
  *
@@ -30,21 +30,18 @@ import weaveit2me.core.ServiceManager;
 public class RPiLoom implements Loom {
 
 	private static RPiLoom currentInstance = null;
-	private ServiceManager mgr = null;
 	private PrintWriter out = null;
 
 	private int numShafts = 8; // affects shift register operations
 	private static List<Integer> shaftSelection; // latest data
-	private static final List<Integer> SELECT_NO_SHAFTS = Arrays
-			.asList(new Integer[]{0});
+	private static final List<Integer> SELECT_NO_SHAFTS = Arrays.asList(new Integer[] { 0 });
 	// private Status status = new Status();
 	private PickProvider pickProvider;
 	private boolean autoAdvance = false;
 	private boolean shedOpen = false;
 
 	private static final GpioController gpio = GpioFactory.getInstance();
-	private static final Logger LOGGER = Logger
-			.getLogger(RPiLoom.class.getName());
+	private static final Logger LOGGER = Logger.getLogger(RPiLoom.class.getName());
 
 	private GpioPinDigitalOutput ssrData; // serial data
 	private GpioPinDigitalOutput ssrClock; // clock performs shift
@@ -52,7 +49,8 @@ public class RPiLoom implements Loom {
 	private GpioPinDigitalOutput ssrOEnable; // makes data available
 	private GpioPinDigitalOutput servoEnable; // enables HC153s
 	private GpioPinDigitalOutput motorStep; // low-high transition
-	private GpioPinDigitalOutput motorDirection; // high is forward/up
+	private GpioPinDigitalOutput motorDirection; // high is
+													// forward/up
 	private GpioPinDigitalOutput motorEnable; // low enables motion
 	private GpioPinDigitalInput treadleSwitch; // pressed or released
 
@@ -69,37 +67,28 @@ public class RPiLoom implements Loom {
 	 * Constructor using default pin assignments.
 	 */
 	private RPiLoom() {
-		ssrData = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_00,
-				PinState.LOW);
+		ssrData = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_00, PinState.LOW);
 		ssrData.setShutdownOptions(true, PinState.LOW);
-		ssrClock = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_02,
-				PinState.LOW);
+		ssrClock = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_02, PinState.LOW);
 		ssrClock.setShutdownOptions(true, PinState.LOW);
-		ssrStrobe = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_01,
-				PinState.LOW);
+		ssrStrobe = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_01, PinState.LOW);
 		ssrStrobe.setShutdownOptions(true, PinState.LOW);
-		ssrOEnable = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_04,
-				PinState.HIGH);
+		ssrOEnable = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_04, PinState.HIGH);
 		ssrOEnable.setShutdownOptions(true, PinState.LOW);
-		servoEnable = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_03,
-				PinState.LOW);
+		servoEnable = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_03, PinState.LOW);
 		servoEnable.setShutdownOptions(true, PinState.LOW);
-		motorStep = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_05,
-				PinState.LOW);
+		motorStep = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_05, PinState.LOW);
 		motorStep.setShutdownOptions(true, PinState.LOW);
-		motorDirection = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_06,
-				PinState.LOW);
+		motorDirection = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_06, PinState.LOW);
 		motorDirection.setShutdownOptions(true, PinState.LOW);
-		motorEnable = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_07,
-				PinState.LOW);
+		motorEnable = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_07, PinState.LOW);
 		motorEnable.setShutdownOptions(true, PinState.LOW);
 		treadleSwitch = gpio.provisionDigitalInputPin(RaspiPin.GPIO_11);
 		treadleSwitch.setDebounce(500);
 		treadleSwitch.setPullResistance(PinPullResistance.PULL_DOWN);
 		treadleSwitch.addListener(new GpioPinListenerDigital() {
 			@Override
-			public void handleGpioPinDigitalStateChangeEvent(
-					GpioPinDigitalStateChangeEvent event) {
+			public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
 				if (event.getEdge().equals(PinEdge.RISING)) {
 					out.println("Treadle pressed");
 					operateTreadle();
@@ -153,11 +142,10 @@ public class RPiLoom implements Loom {
 		}
 		lift();
 		shedOpen = true;
-		out.println("Opened shed holding shafts "+shaftSelection);
+		out.println("Opened shed holding shafts " + shaftSelection);
 	}
 
-	public void driveSteppers(int numSteps, int stepDelayNanos)
-			throws InterruptedException {
+	public void driveSteppers(int numSteps, int stepDelayNanos) throws InterruptedException {
 		System.out.println("Stepping for " + numSteps + " steps.");
 		motorEnable.setState(PinState.LOW);
 		if (numSteps < 0)
@@ -176,8 +164,7 @@ public class RPiLoom implements Loom {
 
 	}
 
-	private void loadShaftDataRegister(List<Integer> currentShaftPicks2)
-			throws InterruptedException {
+	private void loadShaftDataRegister(List<Integer> currentShaftPicks2) throws InterruptedException {
 		ssrData.setState(PinState.LOW);
 		ssrClock.setState(PinState.LOW);
 		ssrStrobe.setState(PinState.LOW);
@@ -247,12 +234,8 @@ public class RPiLoom implements Loom {
 	public void custom(String s) {
 		System.out.println("Received custom command " + s);
 		String[] commands = s.split(" ");
-		String arg1 = commands.length > 0
-				? commands[0].trim().toUpperCase()
-				: "ARG1";
-		String arg2 = commands.length > 1
-				? commands[1].trim().toUpperCase()
-				: "ARG2";
+		String arg1 = commands.length > 0 ? commands[0].trim().toUpperCase() : "ARG1";
+		String arg2 = commands.length > 1 ? commands[1].trim().toUpperCase() : "ARG2";
 		GpioPinDigitalOutput chosen = null;
 		PinState state = null;
 		if (arg1.equals("STROBE")) {
@@ -271,7 +254,7 @@ public class RPiLoom implements Loom {
 			chosen = motorDirection;
 		} else if (arg1.equals("AUTO")) {
 			autoAdvance = !autoAdvance;
-			System.out.println("AutoAdvance: "+autoAdvance);
+			System.out.println("AutoAdvance: " + autoAdvance);
 		} else if (arg1.equals("MOTOR")) {
 			int steps = Integer.parseInt(arg2);
 			try {
@@ -309,14 +292,6 @@ public class RPiLoom implements Loom {
 
 	public void setResponseSocket(PrintWriter out) {
 		this.out = out;
-	}
-
-	public ServiceManager getServiceManager() {
-		return mgr;
-	}
-
-	public void setServiceManager(ServiceManager mgr) {
-		this.mgr = mgr;
 	}
 
 	/**
