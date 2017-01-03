@@ -1,6 +1,5 @@
 package weaveit2me.raspberry;
 
-import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
@@ -17,6 +16,7 @@ import com.pi4j.io.gpio.RaspiPin;
 import com.pi4j.io.gpio.event.GpioPinDigitalStateChangeEvent;
 import com.pi4j.io.gpio.event.GpioPinListenerDigital;
 
+import io.socket.client.Socket;
 import weaveit2me.core.Loom;
 import weaveit2me.core.PickProvider;
 
@@ -30,7 +30,7 @@ import weaveit2me.core.PickProvider;
 public class RPiLoom implements Loom {
 
 	private static RPiLoom currentInstance = null;
-	private PrintWriter out = null;
+	private Socket statusSocket = null;
 
 	private int numShafts = 8; // affects shift register operations
 	private static List<Integer> shaftSelection; // latest data
@@ -90,7 +90,7 @@ public class RPiLoom implements Loom {
 			@Override
 			public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
 				if (event.getEdge().equals(PinEdge.RISING)) {
-					out.println("Treadle pressed");
+					statusSocket.emit("loom event","Treadle pressed");
 					operateTreadle();
 				}
 			}
@@ -116,11 +116,10 @@ public class RPiLoom implements Loom {
 
 	@Override
 	public void startup() {
-		out.print("Loom startup complete");
-	}
+		statusSocket.emit("loom event","Startup complete");	}
 
 	public void shutdown() {
-		out.println("Received shutdown command");
+		statusSocket.emit("loom event","Received shutdown");
 		gpio.shutdown();
 	}
 
@@ -142,8 +141,7 @@ public class RPiLoom implements Loom {
 		}
 		lift();
 		shedOpen = true;
-		out.println("Opened shed holding shafts " + shaftSelection);
-	}
+		statusSocket.emit("loom event","Shuttle open holding "+this.shaftSelection);	}
 
 	public void driveSteppers(int numSteps, int stepDelayNanos) throws InterruptedException {
 		System.out.println("Stepping for " + numSteps + " steps.");
@@ -192,14 +190,13 @@ public class RPiLoom implements Loom {
 	}
 
 	private void engageShafts() throws InterruptedException {
-		out.println("Shafts engaging");
+		statusSocket.emit("loom event","shafts engaging");		
 		servoEnable.setState(PinState.HIGH);
 		Thread.sleep(500);
 		servoEnable.setState(PinState.LOW);
 		loadShaftDataRegister(SELECT_NO_SHAFTS);
 		Thread.sleep(1000);
-		out.println("Shafts engaged");
-	}
+		statusSocket.emit("loom event","shafts engaged");	}
 
 	private void lift() {
 		// TODO Auto-generated method stub
@@ -209,25 +206,25 @@ public class RPiLoom implements Loom {
 	@Override
 	public void closeShed() {
 		shedOpen = false;
-		out.println("Closed shed");
+		statusSocket.emit("loom event", "Closed shed");
 
 	}
 
 	@Override
 	public void beat() {
-		out.println("Beat not implemented");
+		statusSocket.emit("loom event", "Beat not implemented");
 
 	}
 
 	@Override
 	public void weave() {
-		out.println("Weave not implemented");
+		statusSocket.emit("loom event", "Weave not implemented");
 
 	}
 
 	@Override
 	public void wind() {
-		out.println("Wind not implemented");
+		statusSocket.emit("loom event", "Wind not implemented");
 	}
 
 	@Override
@@ -290,10 +287,6 @@ public class RPiLoom implements Loom {
 
 	}
 
-	public void setResponseSocket(PrintWriter out) {
-		this.out = out;
-	}
-
 	/**
 	 * @return the autoAdvance
 	 */
@@ -307,6 +300,11 @@ public class RPiLoom implements Loom {
 	 */
 	public void setAutoAdvance(boolean autoAdvance) {
 		this.autoAdvance = autoAdvance;
+	}
+
+	public void setStatusSocket(Socket sock) {
+		// TODO Auto-generated method stub
+		this.statusSocket = sock;
 	}
 
 }

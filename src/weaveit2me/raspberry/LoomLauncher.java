@@ -7,6 +7,7 @@ import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 import weaveit2me.client.LiftPlan;
+import weaveit2me.client.WIFReader;
 import weaveit2me.core.PickProvider;
 
 /**
@@ -17,7 +18,6 @@ import weaveit2me.core.PickProvider;
  */
 public class LoomLauncher {
 
-//	private static int servicePort = 1793;
 	private static boolean shouldBeRunning = true;
 
 
@@ -28,13 +28,6 @@ public class LoomLauncher {
 	 * @throws URISyntaxException 
 	 */
 	public static void main(String[] args) throws IOException, URISyntaxException {
-//		if (args.length > 0) {
-//			try {
-//				servicePort = Integer.parseInt(args[0]);
-//			} catch (NumberFormatException ex) {
-//				servicePort = 1793;
-//			}
-//		}
 		RPiLoom loom = RPiLoom.getInstance();
 		PickProvider picker = new PickProvider();
 		LiftPlan defaultPlan = new LiftPlan();
@@ -55,10 +48,25 @@ public class LoomLauncher {
 		}).on("loom command", new Emitter.Listener() {
 
 			public void call(Object... args) {
-				System.out.println("Received a loom command: " + args);
-				String command = ((String) args[0]).trim().toUpperCase();
-				if ("EXIT".equals(command)) {
+				String s = (String) args[0];
+				String[] commands = s.split(" ");
+				System.out.println("Commands in the string: ");
+				for(String s2:commands) System.out.println(s2);
+				String majorCommand = commands[0].trim().toUpperCase();
+				System.out.println("Major command "+majorCommand);
+				if ("EXIT".equals(majorCommand)) {
 					shouldBeRunning = false;
+				} else if ("LOAD".equals(majorCommand)) {
+					String url = (String) commands[1];
+					LiftPlan lp = new LiftPlan();
+					try {
+						lp.loadFromURL(url);
+						System.out.println("New Liftplan: "+lp);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					System.out.println("Should have printed a lift plan");
 				}
 			}
 
@@ -69,6 +77,7 @@ public class LoomLauncher {
 			}
 
 		});
+		loom.setStatusSocket(sock);
 		sock.connect();
 		System.out.println("Entering continuous operating loop");
 		while(shouldBeRunning) {

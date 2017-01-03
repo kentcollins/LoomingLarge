@@ -1,6 +1,12 @@
 package weaveit2me.client;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +25,7 @@ public class LiftPlan {
 	public LiftPlan() {
 		this("/Default.wif");
 	}
-
+	
 	public LiftPlan(String fileName) {
 		Map<String, HashMap<String, String>> info = WIFReader.parseResource(fileName);
 		if (info.containsKey("LIFTPLAN")) {
@@ -29,6 +35,27 @@ public class LiftPlan {
 		} else {
 			// throw an error? throw a fit?
 			System.out.println("Could not generate a lift plan from file: " + fileName);
+		}
+	}
+	
+	public void loadFromURL(String url) throws IOException {
+		URL remoteFile = new URL(url);
+        BufferedReader in = new BufferedReader(
+        new InputStreamReader(remoteFile.openStream()));
+
+        String inputLine;
+        List<String> strings = new ArrayList<>();
+        while ((inputLine = in.readLine()) != null)
+            strings.add(inputLine);
+        in.close();
+        Map<String, HashMap<String, String>> info =WIFReader.parseStringArray(strings.toArray(new String[] {}));
+		if (info.containsKey("LIFTPLAN")) {
+			initializePicks(info.get("LIFTPLAN"));
+		} else if (info.containsKey("TIEUP") && info.containsKey("TREADLING")) {
+			initializePicks(info.get("TIEUP"), info.get("TREADLING"));
+		} else {
+			// throw an error? throw a fit?
+			System.out.println("Could not generate a lift plan from file: " + url);
 		}
 	}
 
@@ -79,10 +106,21 @@ public class LiftPlan {
 	public void setPicks(Map<Integer, List<Integer>> picks) {
 		this.picks = picks;
 	}
+	
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		Integer[] keys = picks.keySet().toArray(new Integer[picks.keySet().size()]);
+		Arrays.sort(keys);
+		for (Integer i: keys) {
+			sb.append(picks.get(i));
+		}
+		return sb.toString();
+	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		// loads the default wif file
 		LiftPlan p = new LiftPlan();
+		p.loadFromURL("1fhmz2QkeJ1DQh8KiQKhEzGpxJjOO9oLcZGAK_vpjjfY");
 		System.out.println(p.getPicks());
 	}
 

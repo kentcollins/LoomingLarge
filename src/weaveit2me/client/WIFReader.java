@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Scanner;
 
 public class WIFReader {
-	
+
 	public static Map<String, HashMap<String, String>> parseFile(String fileName) {
 		Map<String, HashMap<String, String>> info = new HashMap<String, HashMap<String, String>>();
 		String section = null;
@@ -41,6 +41,37 @@ public class WIFReader {
 
 		FileNotFoundException e) {
 			e.printStackTrace();
+		}
+
+		return info;
+	}
+
+	public static Map<String, HashMap<String, String>> parseStringArray(String[] lines) {
+		Map<String, HashMap<String, String>> info = new HashMap<String, HashMap<String, String>>();
+		String section = null;
+		for (String line : lines) {
+			String s = line.trim();
+			if (s.indexOf(";") >= 0) {
+				s = s.substring(0, s.indexOf(";"));
+			}
+			if (s.equals("")) {
+				section = null;
+				continue;
+			} else if (isSection(s)) {
+				int leftBracket = s.indexOf("[");
+				int rightBracket = s.indexOf("]");
+				section = s.substring(leftBracket + 1, rightBracket);
+				section = section.toUpperCase();
+				info.put(section, new HashMap<String, String>());
+			} else { // within a section
+				int equals = s.indexOf("=");
+				if (equals > -0) { // found a new mapping
+					String subkey = s.substring(0, equals);
+					String subval = s.substring(equals + 1);
+					System.out.println("subkey "+subkey+" value "+subval+": "+section);
+					info.get(section).put(subkey, subval);
+				}
+			}
 		}
 
 		return info;
